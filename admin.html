@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aether Control - Biometric Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.js"></script>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Expose Firebase utilities globally for the non-module script block
+        window.initializeApp = initializeApp;
+        window.getAuth = getAuth;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.getFirestore = getFirestore;
+        window.setLogLevel = setLogLevel;
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* Base Color & Font */
+        :root {
+            --aether-blue: #00eaff;
+            --holo-violet: #8a2be2;
+            --border-color: rgba(0, 234, 255, 0.5);
+            --bg-dark: rgba(0, 0, 0, 0.4);
+            --grid-color: rgba(0, 234, 255, 0.1);
+            --status-green: #39FF14;
+            /* Neon Green for OK status */
+            --warning-red: #ff3333;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--aether-blue);
+            background-color: #0d0d0d;
+            overflow-x: hidden;
+        }
+
+        /* ---------------------------------- */
+        /* --- NEW STYLES: DYNAMIC INDICATORS & DIVIDERS --- */
+        /* ---------------------------------- */
+
+        @keyframes color-shift {
+            0% {
+                border-color: var(--aether-blue);
+                box-shadow: 0 0 5px var(--aether-blue);
+            }
+
+            33% {
+                border-color: var(--holo-violet);
+                box-shadow: 0 0 5px var(--holo-violet);
+            }
+
+            66% {
+                border-color: var(--status-green);
+                box-shadow: 0 0 5px var(--status-green);
+            }
+
+            100% {
+                border-color: var(--aether-blue);
+                box-shadow: 0 0 5px var(--aether-blue);
+            }
+        }
+
+        .animated-divider {
+            animation: color-shift 5s infinite ease-in-out alternate;
+            /* Ensures the text input border also changes color */
+            transition: border-color 0.5s;
+        }
+
+        .dot-indicators {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--aether-blue);
+            margin-right: 8px;
+            opacity: 0.5;
+            animation: dot-flicker 3s infinite;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: 0.5s;
+            background-color: var(--holo-violet);
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 1s;
+            background-color: var(--status-green);
+        }
+
+        @keyframes dot-flicker {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* ---------------------------------- */
+        /* --- EXISTING STYLES (Adjusted) --- */
+        /* ---------------------------------- */
+
+        .threshold-container {
+            position: relative;
+            padding: 10px 0;
+            /* Applying animated divider for consistent look */
+            border-top: 1px dashed var(--holo-violet);
+            border-bottom: 1px dashed var(--holo-violet);
+            margin-top: 1.5rem;
+        }
+
+        .threshold-bar {
+            height: 5px;
+            background-color: rgba(138, 43, 226, 0.3);
+            margin-top: 5px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .threshold-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--aether-blue);
+            transition: width 0.3s ease-out;
+            box-shadow: 0 0 5px var(--aether-blue);
+        }
+
+        /* Making holo-panel-header border animated */
+        .holo-panel-header {
+            color: white;
+            text-shadow: 0 0 10px var(--aether-blue);
+            border-bottom: 2px solid var(--holo-violet);
+        }
+
+        /* Glitch/Flicker Effect on Main Title */
+        @keyframes plasma-flicker {
+
+            0%,
+            18%,
+            22%,
+            25%,
+            53%,
+            57%,
+            100% {
+                text-shadow:
+                    0 0 5px var(--aether-blue),
+                    0 0 10px var(--holo-violet);
+                opacity: 0.99;
+            }
+
+            20%,
+            24%,
+            55% {
+                text-shadow: none;
+                opacity: 0.8;
+                color: white;
+            }
+        }
+
+        .plasma-flicker-text {
+            animation: plasma-flicker 4s infinite linear alternate;
+        }
+
+        /* Spinning Spindles */
+        @keyframes spin-slow {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spindle-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 40px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .spindle-group.active {
+            opacity: 1;
+        }
+
+        .spindle {
+            width: 30px;
+            height: 30px;
+            margin: 0 5px;
+            border-radius: 50%;
+            border: 2px solid var(--aether-blue);
+            border-top-color: transparent;
+            animation: spin-slow 1.5s linear infinite;
+        }
+
+        .spindle:nth-child(2) {
+            border: 2px solid var(--holo-violet);
+            border-bottom-color: transparent;
+            animation: spin-slow 2.5s linear infinite reverse;
+        }
+
+        /* General Panel and Layout Styles */
+        .main-control-center {
+            perspective: 1500px;
+            transform: rotateX(1deg) rotateY(-1deg) translateZ(0);
+            transition: transform 0.8s ease-out;
+            border-radius: 1rem;
+            position: relative;
+        }
+
+        .holo-panel {
+            background-color: var(--bg-dark);
+            box-shadow:
+                0 0 5px rgba(0, 234, 255, 0.5),
+                0 0 15px rgba(138, 43, 226, 0.5),
+                0 0 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            transition: all 0.5s ease-in-out;
+            position: relative;
+        }
+
+        .holographic-frame {
+            position: relative;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 50px rgba(0, 234, 255, 0.3) inset;
+            border-radius: 1.5rem;
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                opacity: 0.5;
+                box-shadow: 0 0 10px var(--aether-blue);
+            }
+
+            100% {
+                opacity: 0.9;
+                box-shadow: 0 0 25px var(--aether-blue), 0 0 50px var(--holo-violet);
+            }
+        }
+
+        .holographic-frame::after {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border: 2px solid var(--aether-blue);
+            pointer-events: none;
+            z-index: 20;
+            opacity: 0.8;
+            border-radius: 1.7rem;
+            filter: blur(1px);
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        .video-container {
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 234, 255, 0.8);
+            border: 2px solid var(--aether-blue);
+            z-index: 1;
+        }
+
+        .video-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #videoElement {
+            transform: scaleX(-1);
+            filter: contrast(1.2) brightness(1.1);
+            box-shadow: inset 0px 0px 70px 20px rgba(0, 0, 0, 0.9);
+        }
+
+        @keyframes scan {
+            0% {
+                transform: translateY(0%);
+            }
+
+            100% {
+                transform: translateY(100%);
+            }
+        }
+
+        .scanner-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--holo-violet), var(--aether-blue), var(--holo-violet), transparent);
+            animation: scan 4s infinite linear;
+            box-shadow: 0 0 5px var(--holo-violet), 0 0 15px var(--aether-blue);
+            z-index: 10;
+        }
+
+        @keyframes flow-pulse {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 200% 50%;
+            }
+        }
+
+        .data-flow-bar {
+            height: 4px;
+            background: linear-gradient(90deg, transparent 0%, var(--aether-blue) 10%, var(--holo-violet) 20%, var(--aether-blue) 30%, transparent 40%);
+            background-size: 200% 100%;
+            animation: flow-pulse 1.5s linear infinite;
+            opacity: 0.8;
+            margin-top: 8px;
+        }
+
+        @keyframes wave-motion {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .data-wave {
+            width: 90%;
+            height: 30px;
+            margin-top: 15px;
+            background: linear-gradient(90deg, transparent 0%, var(--holo-violet) 10%, var(--aether-blue) 25%, var(--holo-violet) 40%, transparent 50%);
+            background-size: 50% 100%;
+            animation: wave-motion 0.8s linear infinite alternate;
+            mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M0,15 L10,10 L20,20 L30,15 L40,10 L50,20 L60,15 L70,10 L80,20 L90,15 L100,15' stroke='none'/%3E%3C/svg%3E");
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M0,15 L10,10 L20,20 L30,15 L40,10 L50,20 L60,15 L70,10 L80,20 L90,15 L100,15' stroke='none'/%3E%3C/svg%3E");
+            mask-size: 100% 100%;
+        }
+
+        .fpts-display {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--holo-violet);
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+            height: 100px;
+            width: 100px;
+            position: relative;
+            overflow: hidden;
+            margin: 0 auto;
+            border-radius: 50%;
+        }
+
+        .fpts-display::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at center, transparent 0, transparent 1px, var(--aether-blue) 1px, transparent 1.5px),
+                linear-gradient(to right, transparent 49.5%, var(--aether-blue) 50%, transparent 50.5%),
+                linear-gradient(to bottom, transparent 49.5%, var(--aether-blue) 50%, transparent 50.5%);
+            background-size: 50px 50px;
+            opacity: 0.3;
+            border-radius: 50%;
+        }
+
+        #fptsMarker {
+            width: 8px;
+            height: 8px;
+            background-color: var(--status-green);
+            border: 2px solid white;
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.2s ease-out;
+            box-shadow: 0 0 5px var(--status-green), 0 0 10px var(--status-green);
+            z-index: 50;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes rotate-cube-slow {
+            0% {
+                transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+            }
+
+            100% {
+                transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg);
+            }
+        }
+
+        @keyframes rotate-cube-fast {
+            0% {
+                transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+            }
+
+            100% {
+                transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg);
+            }
+        }
+
+        .cube-container {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            animation: rotate-cube-slow 40s infinite linear;
+        }
+
+        .cube.high-power {
+            animation: rotate-cube-fast 15s infinite linear;
+        }
+
+        .cube-face {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border: 1px dashed var(--aether-blue);
+            box-shadow:
+                0 0 5px var(--holo-violet),
+                0 0 20px var(--aether-blue),
+                0 0 40px var(--aether-blue);
+            background: rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        .cube.high-power .cube-face {
+            box-shadow:
+                0 0 10px var(--holo-violet),
+                0 0 30px var(--aether-blue),
+                0 0 60px var(--aether-blue);
+        }
+
+        .cube-face-front {
+            transform: rotateY(0deg) translateZ(200px);
+        }
+
+        .cube-face-back {
+            transform: rotateX(180deg) translateZ(200px);
+        }
+
+        .cube-face-right {
+            transform: rotateY(90deg) translateZ(200px);
+        }
+
+        .cube-face-left {
+            transform: rotateY(-90deg) translateZ(200px);
+        }
+
+        .cube-face-top {
+            transform: rotateX(90deg) translateZ(200px);
+        }
+
+        .cube-face-bottom {
+            transform: rotateX(-90deg) translateZ(200px);
+        }
+
+        .perspective-grid {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50vh;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+            perspective: 500px;
+            opacity: 0.2;
+        }
+
+        .grid-plane {
+            position: absolute;
+            bottom: 0;
+            width: 200%;
+            height: 100%;
+            left: -50%;
+            background-image:
+                linear-gradient(to right, transparent, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, transparent, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(80deg) translateZ(-100px);
+            transform-origin: bottom center;
+            box-shadow: 0 0 150px rgba(0, 234, 255, 0.3) inset;
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen p-4 md:p-10">
+    <div class="perspective-grid">
+        <div class="grid-plane"></div>
+    </div>
+
+    <div class="w-full max-w-7xl main-control-center">
+        <div class="cube-container">
+            <div id="rotatingCube" class="cube">
+                <div class="cube-face cube-face-front"></div>
+                <div class="cube-face cube-face-back"></div>
+                <div class="cube-face cube-face-right"></div>
+                <div class="cube-face cube-face-left"></div>
+                <div class="cube-face cube-face-top"></div>
+                <div class="cube-face cube-face-bottom"></div>
+            </div>
+        </div>
+
+        <h1 class="text-4xl font-extrabold mb-8 text-center uppercase tracking-widest text-white text-shadow-lg plasma-flicker-text"
+            style="text-shadow: 0 0 15px var(--aether-blue);">
+            AETHER-QCM: QUANTUM CONTROL MATRIX
+        </h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+
+            <div class="holo-panel p-6 rounded-2xl md:order-1">
+                <h2 class="holo-panel-header text-xl font-bold mb-2 pb-2 uppercase animated-divider">SUBJECT DATA INPUT
+                </h2>
+                <div class="dot-indicators">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+
+                <div id="spindleLoading" class="spindle-group mb-4 active">
+                    <div class="spindle"></div>
+                    <div class="spindle"></div>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label for="regIdKaryawan" class="text-xs text-indigo-400 block mb-1">EMPLOYEE ID (E.G.
+                            E001)</label>
+                        <input type="text" id="regIdKaryawan" placeholder="K001"
+                            class="w-full p-2 bg-transparent border-b-2 border-indigo-600 focus:border-aether-blue focus:outline-none uppercase text-lg animated-divider"
+                            style="caret-color: var(--aether-blue); --tw-border-opacity: 0.5;">
+                    </div>
+
+                    <div>
+                        <label for="regNama" class="text-xs text-indigo-400 block mb-1">EMPLOYEE NAME</label>
+                        <input type="text" id="regNama" placeholder="NAMA"
+                            class="w-full p-2 bg-transparent border-b-2 border-indigo-600 focus:border-aether-blue focus:outline-none text-lg animated-divider"
+                            style="caret-color: var(--aether-blue); --tw-border-opacity: 0.5;">
+                    </div>
+
+                    <div class="threshold-container animated-divider">
+                        <div class="text-sm uppercase flex justify-between">
+                            <span class="text-indigo-400">INPUT THRESHOLD</span>
+                            <span id="thresholdStatus" class="font-bold text-white">0%</span>
+                        </div>
+                        <div class="threshold-bar">
+                            <div id="thresholdFill" class="threshold-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4">
+                        <button id="submitRegisterBtn"
+                            class="bg-indigo-700 hover:bg-indigo-600 text-white font-bold py-3 px-4 transition duration-300 w-full rounded-lg uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed"
+                            style="box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);" disabled>
+                            1. CAPTURE & REGISTER BIOMETRIC
+                        </button>
+                    </div>
+
+                    <p id="statusMessage" class="text-center font-bold text-lg h-8 mt-4 uppercase">
+                        INITIALIZING SYSTEM...
+                    </p>
+                </div>
+            </div>
+
+            <div class="holo-panel p-4 rounded-2xl md:order-2 flex flex-col justify-center items-center">
+                <h2 class="holo-panel-header text-xl font-bold mb-2 pb-2 uppercase w-full text-center animated-divider">
+                    HOLOGRAPHIC BIOMETRIC ANALYZER (4D)</h2>
+                <div class="dot-indicators">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+
+                <div class="holographic-frame flex justify-center w-full aspect-video max-w-lg">
+                    <div class="video-container w-full h-full rounded-lg">
+                        <video id="videoElement" autoplay muted playsinline
+                            class="w-full h-full bg-black rounded-lg"></video>
+                        <canvas id="overlay" class="rounded-lg"></canvas>
+                        <div class="scanner-line rounded-lg"></div>
+
+                    </div>
+                </div>
+                <div class="data-wave"></div>
+                <div class="text-xs text-indigo-400 mt-1">BIOMETRIC SIGNAL ANALYSIS / DEPTH MAPPING</div>
+
+                <div class="w-full mt-6 flex justify-between items-center space-x-4">
+                    <div class="flex-1">
+                        <h3 class="text-sm uppercase mb-2 text-white text-center"
+                            style="text-shadow: 0 0 5px var(--status-green);">:: F-PTS RADAR ::</h3>
+                        <div class="fpts-display">
+                            <div id="fptsMarker"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 space-y-2 text-sm">
+                        <div class="border-b border-indigo-700 pb-1 animated-divider">
+                            <span class="text-indigo-400">ALIGNMENT_X:</span>
+                            <span id="alignX" class="float-right text-base text-status-green"
+                                style="color: var(--status-green);">0.00°</span>
+                        </div>
+                        <div class="border-b border-indigo-700 pb-1 animated-divider">
+                            <span class="text-indigo-400">ALIGNMENT_Y:</span>
+                            <span id="alignY" class="float-right text-base text-status-green"
+                                style="color: var(--status-green);">0.00°</span>
+                        </div>
+                        <div class="border-b border-indigo-700 pb-1 animated-divider">
+                            <span class="text-indigo-400">FOCUS_LEVEL:</span>
+                            <span id="focusLevel" class="float-right text-base text-status-green"
+                                style="color: var(--status-green);">100%</span>
+                        </div>
+                        <div class="pt-1">
+                            <span class="text-indigo-400">STATUS:</span>
+                            <span id="fptsStatus" class="float-right text-base font-bold"
+                                style="color: var(--status-green);">[WAITING_MODEL]</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="holo-panel p-6 rounded-2xl md:order-3">
+                <h2 class="holo-panel-header text-xl font-bold mb-2 pb-2 uppercase animated-divider">SYSTEM METRICS</h2>
+                <div class="dot-indicators">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+
+                <div class="space-y-4 text-sm">
+                    <div class="border-b border-indigo-700 pb-2 animated-divider">
+                        <span class="text-indigo-400">TIME_STAMP:</span>
+                        <span id="systemTime" class="float-right text-white"
+                            style="text-shadow: 0 0 8px var(--aether-blue);">--:--:--</span>
+                    </div>
+
+                    <div class="border-b border-indigo-700 pb-2 animated-divider">
+                        <span class="text-indigo-400">CPU_LOAD:</span>
+                        <span id="cpuLoad" class="float-right text-violet-400">0%</span>
+                    </div>
+                    <div class="border-b border-indigo-700 pb-2 animated-divider">
+                        <span class="text-indigo-400">MEMORY_ALLOC:</span>
+                        <span id="memoryAlloc" class="float-right text-violet-400">0 MB</span>
+                    </div>
+                    <div class="border-b border-indigo-700 pb-2 animated-divider">
+                        <span class="text-indigo-400">NET_LATENCY:</span>
+                        <span id="latency" class="float-right text-violet-400">0 ms</span>
+                    </div>
+                    <div class="border-b border-indigo-700 pb-2 animated-divider">
+                        <span class="text-indigo-400">FACE_DET_FPS:</span>
+                        <span id="fps" class="float-right text-violet-400">--</span>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h3 class="text-sm uppercase mb-2 text-white" style="text-shadow: 0 0 5px var(--aether-blue);">::
+                        REAL-TIME BIOMETRIC DATA STREAM ::</h3>
+                    <div class="data-flow-bar rounded-full"></div>
+                    <div id="logStream"
+                        class="h-40 overflow-y-auto mt-2 p-2 bg-black rounded-lg border border-indigo-900 text-xs">
+                        <p class="text-xs text-indigo-500">Log 1: Initiating Secure Channel...</p>
+                        <p class="text-xs text-indigo-500">Log 2: System Power Core Nominal.</p>
+                        <p class="text-xs text-indigo-500">Log 3: Awaiting Model Load Confirmation...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for Firebase access (Dummy values for front-end focus)
+        let db, auth;
+        const appId = 'DUMMY_APP_ID';
+        const firebaseConfig = { apiKey: "dummy", authDomain: "dummy", projectId: "dummy" };
+        const initialAuthToken = null;
+
+        // --- GLOBAL STATE VARIABLES (KRITIS) ---
+        let isFaceDetected = false;
+        let currentFaceDescriptor = null;
+
+        // DOM Elements
+        const video = document.getElementById('videoElement');
+        const canvas = document.getElementById('overlay');
+        const statusMessage = document.getElementById('statusMessage');
+        const submitRegisterBtn = document.getElementById('submitRegisterBtn');
+        const spindleLoading = document.getElementById('spindleLoading');
+        const regIdKaryawan = document.getElementById('regIdKaryawan');
+        const regNama = document.getElementById('regNama');
+        const thresholdStatus = document.getElementById('thresholdStatus');
+        const thresholdFill = document.getElementById('thresholdFill');
+        const alignX = document.getElementById('alignX');
+        const alignY = document.getElementById('alignY');
+        const fptsMarker = document.getElementById('fptsMarker');
+        const fptsStatus = document.getElementById('fptsStatus');
+        const fpsDisplay = document.getElementById('fps');
+        const systemTime = document.getElementById('systemTime');
+
+        const THRESHOLD_MIN = 0.85; // Confidence minimal (85%) untuk aktivasi tombol
+
+        // Path Model
+        const MODEL_URL_RELATIF = './models';
+        const MODEL_URL_CDN = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models';
+        let CURRENT_MODEL_URL = MODEL_URL_RELATIF;
+
+        const detectionOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+        let detectionInterval;
+        let lastUpdateTime = performance.now();
+
+        // Utility function to add messages to the log stream
+        function addToLogStream(message, color = 'text-indigo-500') {
+            const logStream = document.getElementById('logStream');
+            const p = document.createElement('p');
+            p.className = `text-xs ${color.startsWith('var(') ? '' : color}`;
+            p.style.color = color.startsWith('var(') ? color : '';
+            p.textContent = message;
+            if (logStream.children.length > 15) {
+                logStream.removeChild(logStream.children[0]);
+            }
+            logStream.appendChild(p);
+            logStream.scrollTop = logStream.scrollHeight;
+        }
+
+        // Utility for system time
+        function updateSystemTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            systemTime.textContent = timeString;
+        }
+        setInterval(updateSystemTime, 1000);
+
+        // --- KRITIS: FUNGSI AKTIVASI TOMBOL ---
+        function checkInputAndDetection() {
+            const idValue = regIdKaryawan.value.trim();
+            const nameValue = regNama.value.trim();
+
+            const isInputValid = idValue !== '' && nameValue !== '';
+            const shouldBeActive = isInputValid && isFaceDetected;
+
+            if (shouldBeActive) {
+                submitRegisterBtn.disabled = false;
+                submitRegisterBtn.classList.remove('opacity-30', 'disabled:cursor-not-allowed', 'bg-indigo-700', 'hover:bg-indigo-600');
+                submitRegisterBtn.style.backgroundColor = 'var(--aether-blue)';
+                submitRegisterBtn.style.color = 'black';
+                submitRegisterBtn.style.boxShadow = '0 0 20px var(--aether-blue)';
+                submitRegisterBtn.textContent = '1. CAPTURE & REGISTER BIOMETRIC (ACTIVE)';
+            } else {
+                submitRegisterBtn.disabled = true;
+                submitRegisterBtn.classList.add('opacity-30', 'disabled:cursor-not-allowed', 'bg-indigo-700', 'hover:bg-indigo-600');
+                submitRegisterBtn.style.backgroundColor = '';
+                submitRegisterBtn.style.color = '';
+                submitRegisterBtn.style.boxShadow = '0 0 15px rgba(138, 43, 226, 0.5)';
+                submitRegisterBtn.textContent = '1. CAPTURE & REGISTER BIOMETRIC';
+            }
+        }
+
+        // --- FUNGSI UTAMA DETEKSI ---
+        async function updateDetection() {
+            if (video.paused || video.ended) return;
+
+            const detection = await faceapi.detectSingleFace(video, detectionOptions)
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            // Hitung FPS
+            const now = performance.now();
+            const elapsed = now - lastUpdateTime;
+            const fps = (1000 / elapsed).toFixed(1);
+            fpsDisplay.textContent = fps;
+            lastUpdateTime = now;
+
+            if (detection) {
+                // 1. Update Threshold Bar
+                const confidence = detection.detection.score;
+                const percent = (confidence * 100).toFixed(0);
+                thresholdFill.style.width = `${percent}%`;
+                thresholdStatus.textContent = `${percent}%`;
+
+                // 2. Cek Kondisi Wajah (Aktivasi)
+                if (confidence >= THRESHOLD_MIN) {
+                    isFaceDetected = true;
+                    currentFaceDescriptor = detection.descriptor;
+                    fptsStatus.textContent = "[LOCKED: READY]";
+                    statusMessage.textContent = "REGISTRATION READY. PRESS BUTTON.";
+                    thresholdFill.style.backgroundColor = 'var(--status-green)';
+                } else {
+                    isFaceDetected = false;
+                    currentFaceDescriptor = null;
+                    fptsStatus.textContent = "[OUT OF RANGE]";
+                    statusMessage.textContent = "ALIGN FACE (CONFIDENCE LOW)";
+                    thresholdFill.style.backgroundColor = 'var(--aether-blue)';
+                }
+
+                // 3. Gambar Deteksi
+                const displaySize = { width: video.videoWidth, height: video.videoHeight };
+                const resizedDetections = faceapi.resizeResults(detection, displaySize);
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                faceapi.draw.drawFaceLandmarks(canvas, resizedDetections, { drawLines: true, color: 'rgba(0, 234, 255, 0.7)' });
+
+                // Update marker dan alignment (Contoh sederhana)
+                const box = resizedDetections.detection.box;
+                const centerX = box.x + box.width / 2;
+                const centerY = box.y + box.height / 2;
+
+                const videoCenterX = video.videoWidth / 2;
+                const videoCenterY = video.videoHeight / 2;
+
+                const diffX = (centerX - videoCenterX) / videoCenterX * 10;
+                const diffY = (centerY - videoCenterY) / videoCenterY * 10;
+
+                fptsMarker.style.transform = `translate(${diffX.toFixed(2)}px, ${diffY.toFixed(2)}px)`;
+                alignX.textContent = `${(diffX).toFixed(2)}°`;
+                alignY.textContent = `${(diffY).toFixed(2)}°`;
+
+
+            } else {
+                // Tidak ada wajah terdeteksi
+                thresholdFill.style.width = '0%';
+                thresholdStatus.textContent = '0%';
+                fptsStatus.textContent = "[NO_TARGET]";
+                statusMessage.textContent = "AWAITING BIOMETRIC TARGET...";
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                isFaceDetected = false;
+                currentFaceDescriptor = null;
+                thresholdFill.style.backgroundColor = 'var(--aether-blue)';
+            }
+
+            checkInputAndDetection();
+        }
+
+        // --- FUNGSI REGISTRASI (Dikirim ke Server.js) ---
+        async function registerFace() {
+            if (submitRegisterBtn.disabled || !currentFaceDescriptor) return;
+
+            const idKaryawan = regIdKaryawan.value.trim().toUpperCase();
+            const nama = regNama.value.trim().toUpperCase();
+
+            submitRegisterBtn.disabled = true;
+            statusMessage.textContent = "PROCESSING DATA...";
+
+            try {
+                // Kirim permintaan ke endpoint /api/register_face di server.js
+                const response = await fetch('/api/register_face', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_karyawan: idKaryawan,
+                        nama: nama,
+                        descriptor: Array.from(currentFaceDescriptor)
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    addToLogStream(`Log R: SUCCESS: ID ${idKaryawan} Registered.`, 'var(--status-green)');
+                    statusMessage.textContent = `[SUCCESS] ID: ${idKaryawan} SAVED.`;
+                    regIdKaryawan.value = '';
+                    regNama.value = '';
+                } else {
+                    addToLogStream(`Log R: ERROR: Registration Failed. Server: ${result.message || 'Unknown Error'}`, 'var(--warning-red)');
+                    statusMessage.textContent = `[ERROR] ${result.message || 'SERVER ERROR'}`;
+                }
+
+            } catch (error) {
+                console.error("Registration failed:", error);
+                addToLogStream(`Log R: CRITICAL: Network/Server Error.`, 'var(--warning-red)');
+                statusMessage.textContent = `[ERROR] NETWORK FAILED.`;
+            } finally {
+                checkInputAndDetection();
+            }
+        }
+
+
+        // --- MODEL LOAD SETUP ---
+        async function loadModels() {
+            addToLogStream("Log 5: BIOMETRIC_CORE: Loading models...", 'text-yellow-500');
+            spindleLoading.classList.add('active');
+
+            try {
+                // Load semua model yang diperlukan
+                await faceapi.nets.tinyFaceDetector.loadFromUri(CURRENT_MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(CURRENT_MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(CURRENT_MODEL_URL);
+
+                addToLogStream("Log 6: BIOMETRIC_CORE: All models loaded. Status: NOMINAL.", 'var(--status-green)');
+                fptsStatus.textContent = "[MODEL_LOADED]";
+                spindleLoading.classList.remove('active');
+                statusMessage.textContent = "AWAITING CAMERA ACCESS...";
+
+                // Panggil startVideo setelah model dimuat
+                await startVideo();
+
+            } catch (error) {
+                // Fallback ke CDN jika path relatif gagal
+                if (CURRENT_MODEL_URL === MODEL_URL_RELATIF) {
+                    addToLogStream(`Log X: WARNING: Failed to load models from ${MODEL_URL_RELATIF}. Trying CDN fallback.`, 'text-yellow-500');
+                    CURRENT_MODEL_URL = MODEL_URL_CDN;
+                    return loadModels();
+                }
+                console.error("Face-API Model Loading Error:", error);
+                addToLogStream(`Log X: FATAL_ERROR: Model Load Failed. Check 'models/' folder.`, 'var(--warning-red)');
+                statusMessage.textContent = "[FATAL] MODEL LOAD FAILED.";
+            }
+        }
+
+        // --- KRITIS: FUNGSI AKSES KAMERA YANG DIPERBAIKI ---
+        async function startVideo() {
+            try {
+                // Minta akses kamera
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 480 } }
+                });
+
+                video.srcObject = stream;
+
+                // Menggunakan Promise untuk memastikan video siap dimainkan
+                return new Promise((resolve) => {
+                    video.addEventListener('loadedmetadata', () => {
+                        video.play();
+                        const displaySize = { width: video.videoWidth, height: video.videoHeight };
+                        faceapi.matchDimensions(canvas, displaySize);
+
+                        addToLogStream("Log 7.1: VIDEO_STREAM: Camera feed established. Status: ACTIVE.", 'var(--status-green)');
+                        addToLogStream(`Log 7.2: VIDEO_STREAM: Resolution Locked (${displaySize.width}x${displaySize.height}).`, 'var(--status-green)');
+                        detectionInterval = setInterval(updateDetection, 100); // Mulai deteksi wajah
+                        resolve();
+                    }, { once: true });
+                });
+
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                let errorMessage = `Log X: FATAL_ERROR: Akses Kamera Gagal. Detail: ${err.name || 'Unknown'}.`;
+
+                if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                    errorMessage = "Log X: FATAL_ERROR: Izin Kamera Ditolak. (Pastikan Anda mengakses dari HTTP/HTTPS atau Localhost).";
+                } else if (err.name === "NotFoundError") {
+                    errorMessage = "Log X: FATAL_ERROR: Tidak ada kamera ditemukan di perangkat.";
+                }
+
+                addToLogStream(errorMessage, 'var(--warning-red)');
+                statusMessage.textContent = "[FATAL] CAMERA ERROR.";
+                alert("Akses Kamera Gagal! Solusi: Pastikan Anda menjalankan file ini melalui server lokal (http://localhost) dan telah memberikan izin kamera.");
+                throw err; // Lempar error agar promise dari loadModels selesai
+            }
+        }
+
+        // --- INITIALIZATION ---
+        function initApp() {
+            // Setup Listeners untuk input dan tombol
+            regIdKaryawan.addEventListener('input', checkInputAndDetection);
+            regNama.addEventListener('input', checkInputAndDetection);
+            submitRegisterBtn.addEventListener('click', registerFace);
+
+            // Mulai proses
+            loadModels();
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>node s
+
+</html>

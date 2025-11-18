@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Biometrik - Terminal Analisis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.js"></script>
+    <style>
+        /* TEMA CYBER DAN FONT MONOSPACE */
+        body {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            background-color: #05050A;
+            color: #00FFFF;
+        }
+
+        /* Animasi Glitch pada Judul */
+        .glitch-text {
+            color: #FF00FF;
+            text-shadow: -2px 0 #00FFFF, 2px 0 #FF00FF;
+            animation: glitch-anim 5s infinite linear alternate;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                text-shadow: -2px -2px #00FFFF, 2px 2px #FF00FF;
+            }
+
+            20% {
+                text-shadow: 2px 2px #00FFFF, -2px -2px #FF00FF;
+            }
+
+            40% {
+                text-shadow: -2px 2px #00FFFF, 2px -2px #FF00FF;
+            }
+
+            60% {
+                text-shadow: 2px -2px #00FFFF, -2px 2px #FF00FF;
+            }
+
+            80% {
+                text-shadow: -1px 1px #00FFFF, 1px -1px #FF00FF;
+            }
+
+            100% {
+                text-shadow: 1px -1px #00FFFF, -1px 1px #FF00FF;
+            }
+        }
+
+        /* WIDGET PANEL STYLING */
+        .widget-panel {
+            background-color: rgba(6, 15, 20, 0.85);
+            border: 1px solid #00FFFF;
+            padding: 1rem;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), inset 0 0 5px rgba(0, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .widget-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #00FFFF;
+            border-bottom: 1px dashed rgba(0, 255, 255, 0.5);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 5px #00FFFF;
+        }
+
+        /* FRAME VIDEO (FOKUS DETEKSI) */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 75%;
+            box-shadow: 0 0 80px rgba(0, 255, 255, 0.9);
+            border: 5px solid #00FFFF;
+            background: #000;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;
+        }
+
+        /* --- EFEK LOCK-ON SUKSES (HIJAU NEON) --- */
+        .video-container.scan-success {
+            border-color: #00FF7F !important;
+            /* Hijau Neon Keras */
+            box-shadow: 0 0 100px rgba(0, 255, 127, 0.9), inset 0 0 30px rgba(0, 255, 127, 0.5);
+            /* Hijau glow kuat */
+            animation: success-pulse 0.5s 1 ease-out;
+            /* Berdenyut sebentar */
+        }
+
+        @keyframes success-pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.005);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* ------------------------------------------- */
+
+        /* Video dan Canvas */
+        .video-container video,
+        .video-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(1.4) contrast(1.2);
+        }
+
+        #videoElement {
+            transform: scaleX(-1);
+        }
+
+        /* DATA STREAM */
+        #dataStream p {
+            line-height: 1.1;
+            margin: 0;
+            padding: 0;
+            white-space: nowrap;
+            font-size: 0.7rem;
+            color: #00AAAA;
+        }
+
+        #dataStream span {
+            color: #FFD700;
+        }
+
+        /* GRAPH BARS */
+        .graph-bar {
+            width: 6px;
+            margin-right: 2px;
+            background-color: #00FF7F;
+            transition: height 0.1s ease-out;
+        }
+
+        /* PROGRESS BAR STYLING */
+        .mini-progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: rgba(0, 255, 255, 0.2);
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background-color: #00FF7F;
+            transition: width 0.3s ease-out;
+            border-radius: 3px;
+        }
+
+        /* OVERLAY SUKSES/GAGAL HOLOGRAFIK */
+        #successOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            text-shadow: 0 0 15px #00FF00, 0 0 25px #00FF00;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen p-4 text-cyan-400">
+
+    <div id="successOverlay">
+        <h2 id="overlayStatus" class="text-7xl font-extrabold text-green-300 mb-6"></h2>
+        <p id="overlayMessage" class="text-3xl text-green-200"></p>
+    </div>
+
+    <div class="w-full max-w-7xl mx-auto grid grid-cols-4 gap-6 p-8">
+
+        <div class="col-span-1 flex flex-col gap-6">
+
+            <div class="widget-panel">
+                <h2 class="widget-title">SYSTEM CLOCK</h2>
+                <p id="clock" class="text-5xl font-mono text-center text-cyan-400 font-extrabold"></p>
+            </div>
+
+            <div class="widget-panel">
+                <h2 class="widget-title">USER DATA</h2>
+                <p class="text-lg font-bold">NAME: <span id="userIdDisplay"
+                        class="text-cyan-400 font-extrabold">AWAITING SCAN</span></p>
+                <p class="text-lg font-bold">STATUS: <span id="userStatusDisplay"
+                        class="text-red-500">UNAUTHORIZED</span></p>
+                <p class="text-lg font-bold">LAST ACTION: <span id="lastActionDisplay"
+                        class="text-amber-400">00:00:00</span></p>
+            </div>
+
+            <div class="widget-panel flex-grow overflow-hidden">
+                <h2 class="widget-title">SYSTEM LOG</h2>
+                <div id="systemLog" class="text-xs h-40 overflow-y-auto pt-1">
+                    <p class="text-amber-300">> System Boot: Online</p>
+                    <p class="text-green-500">> Face Models: Loaded</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-span-2 flex flex-col items-center justify-center gap-4">
+            <h1 class="text-4xl font-extrabold glitch-text">:: BIOMETRIC AUTHENTICATION ::</h1>
+
+            <div id="videoContainer" class="video-container max-w-full rounded-md shadow-xl relative">
+                <video id="videoElement" autoplay muted playslines></video>
+                <canvas id="overlay"></canvas>
+            </div>
+
+            <p id="statusMessage"
+                class="text-center text-2xl font-bold text-gray-300 h-10 flex items-center justify-center w-full transition-colors duration-500">
+                AWAITING BIOMETRIC INPUT...</p>
+        </div>
+
+        <div class="col-span-1 flex flex-col gap-6">
+
+            <div class="widget-panel">
+                <h2 class="widget-title">DIAGNOSTICS & THRESHOLD</h2>
+                <div class="widget-content flex flex-col gap-2">
+                    <p class="text-xs text-amber-300">MODEL LOAD STATUS:</p>
+                    <div class="mini-progress-bar w-full h-2 bg-gray-700 border border-cyan-800">
+                        <div class="h-full bg-green-500 w-full" style="width: 100%;"></div>
+                    </div>
+                    <p class="text-xs pt-2 text-amber-300">MATCH ACCURACY (0.60):</p>
+                    <div class="mini-progress-bar w-full h-2 bg-gray-700 border border-cyan-800">
+                        <div class="h-full bg-red-500" id="matchThresholdBar" style="width: 60%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="widget-panel">
+                <h2 class="widget-title">LIVE ANALYTICS</h2>
+                <div id="graph" class="h-28 bg-gray-900 border border-cyan-800 flex items-end overflow-hidden p-1">
+                </div>
+            </div>
+
+            <div class="widget-panel flex-grow">
+                <h2 class="widget-title">DATA STREAM</h2>
+                <div id="dataStream"
+                    class="text-xs h-36 overflow-hidden pt-1 border border-cyan-800 p-2 bg-cyan-900/10">
+                    <p class="text-cyan-700">Initializing stream...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="scan.js"></script>
+</body>
+
+</html>

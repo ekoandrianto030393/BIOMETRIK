@@ -1,0 +1,26 @@
+{
+  "name": "face-recognition-system",
+  "version": "1.0.0",
+  "description": "System registrasi biometrik menggunakan Face-API.js dan Node.js/Express.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "face-api",
+    "express",
+    "biometric"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "mysql2": "^3.15.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
