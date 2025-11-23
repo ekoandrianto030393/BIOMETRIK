@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Biometric HUD - Terminal</title>
+    <title>Advanced Biometric Gateway - Interstellar Ops</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,9 +15,13 @@
         body {
             margin: 0;
             overflow: hidden;
+            /* Mencegah scrollbar ganda */
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
             background-color: #05050A;
+            /* Dark Abyss */
             color: #00FFFF;
+            /* Default Neon Cyan */
+            cursor: crosshair;
         }
 
         /* --- 2. LAYOUT LAYERS --- */
@@ -38,6 +42,13 @@
             z-index: 10;
             min-height: 100vh;
             background-color: rgba(5, 5, 10, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            /* PERBAIKAN POSISI: Konten didorong ke atas */
+            justify-content: flex-start;
+            padding-top: 1rem;
         }
 
         /* --- 3. WIDGET PANELS (KOTAK KIRI & KANAN) --- */
@@ -46,37 +57,79 @@
             border: 1px solid #00FFFF;
             padding: 1rem;
             border-radius: 4px;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 5px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3), inset 0 0 8px rgba(0, 255, 255, 0.2);
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
             position: relative;
             overflow: hidden;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
+            border-image: linear-gradient(45deg, #00FFFF, #FF00FF, #00FF7F) 1;
+            animation: border-anim 8s infinite alternate ease-in-out;
         }
 
         .widget-title {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #00FFFF;
-            border-bottom: 1px dashed rgba(0, 255, 255, 0.5);
-            padding-bottom: 0.5rem;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 0 5px #00FFFF;
-            letter-spacing: 1px;
+            border-bottom: 1px dashed rgba(0, 255, 255, 0.6);
+            padding-bottom: 0.6rem;
+            margin-bottom: 0.6rem;
+            text-shadow: 0 0 10px #00FFFF, 0 0 20px rgba(0, 255, 255, 0.3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .widget-title::after {
+            content: '_';
+            opacity: 0.6;
+            color: #FF00FF;
+            animation: text-flicker 10s infinite step-end;
+        }
+
+        @keyframes text-flicker {
+
+            0%,
+            5%,
+            52%,
+            54%,
+            100% {
+                opacity: 0.6;
+            }
+
+            51%,
+            53% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes border-anim {
+            0% {
+                border-image: linear-gradient(45deg, #00FFFF, #FF00FF, #00FF7F) 1;
+            }
+
+            50% {
+                border-image: linear-gradient(135deg, #00FF7F, #FF00FF, #00FFFF) 1;
+            }
+
+            100% {
+                border-image: linear-gradient(225deg, #FF00FF, #00FFFF, #00FF7F) 1;
+            }
         }
 
         /* --- 4. VIDEO CONTAINER & HUD EFFECTS (INTI VISUAL) --- */
         .video-container {
             position: relative;
             width: 100%;
-            padding-top: 75%;
-            /* Aspect Ratio 4:3 */
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
-            border: 2px solid #00FFFF;
+            max-width: 900px;
+            padding-top: 56.25%;
+            /* Rasio Aspek 16:9 */
+            box-shadow: 0 0 60px rgba(0, 255, 255, 0.6), inset 0 0 20px rgba(0, 255, 255, 0.2);
+            border: 3px solid #00FFFF;
             background: #000;
             overflow: hidden;
-            border-radius: 8px;
+            border-radius: 10px;
+            transition: all 0.3s ease-in-out;
         }
 
         /* Efek Grid Overlay Halus pada Video */
@@ -87,25 +140,40 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
+            background: linear-gradient(rgba(0, 255, 255, 0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.15) 1px, transparent 1px);
+            background-size: 50px 50px;
             pointer-events: none;
             z-index: 5;
+            animation: grid-flicker 15s infinite step-end;
         }
 
-        /* Garis Laser Scanner (Bergerak Naik Turun) */
+        @keyframes grid-flicker {
+
+            0%,
+            40%,
+            44%,
+            100% {
+                opacity: 1;
+            }
+
+            41%,
+            43% {
+                opacity: 0.8;
+            }
+        }
+
+        /* Garis Laser Scanner */
         .scanner-beam {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 3px;
-            background: #00FF7F;
-            box-shadow: 0 0 10px #00FF7F, 0 0 20px #00FF7F;
-            opacity: 0.6;
+            height: 4px;
+            background: linear-gradient(to right, transparent, #00FF7F, #00FF7F, #00FF7F, transparent);
+            box-shadow: 0 0 15px #00FF7F, 0 0 30px #00FF7F;
+            opacity: 0.8;
             z-index: 20;
-            animation: scan-move 3s infinite linear;
+            animation: scan-move 2.5s infinite linear;
         }
 
         @keyframes scan-move {
@@ -128,7 +196,6 @@
             }
         }
 
-        /* Video & Canvas Setup */
         .video-container video,
         .video-container canvas {
             position: absolute;
@@ -139,75 +206,65 @@
             object-fit: cover;
         }
 
-        /* Canvas harus di atas video tapi di bawah scanner beam */
         .video-container canvas {
             z-index: 10;
         }
 
         .video-container video {
             z-index: 1;
-            /* Efek Glitch Ringan pada Video */
-            filter: brightness(1.2) contrast(1.1) saturate(0.8);
-            animation: light-glitch 20s infinite step-end;
-        }
-
-        /* Mirror effect */
-        #videoElement {
+            filter: brightness(1.3) contrast(1.2) saturate(0.9);
             transform: scaleX(-1);
-        }
-
-        /* Efek Glitch Ringan pada Video */
-        @keyframes light-glitch {
-
-            0%,
-            50%,
-            52%,
-            60%,
-            80%,
-            82%,
-            100% {
-                filter: brightness(1.2) contrast(1.1) saturate(0.8);
-            }
-
-            51%,
-            81% {
-                filter: brightness(1.1) contrast(1.2) saturate(1.0) hue-rotate(5deg);
-            }
+            /* Cermin */
         }
 
         /* Efek Sukses (Hijau Neon) */
         .video-container.scan-success {
             border-color: #00FF7F !important;
-            box-shadow: 0 0 80px rgba(0, 255, 127, 0.8), inset 0 0 30px rgba(0, 255, 127, 0.3);
-            transition: all 0.3s ease;
+            box-shadow: 0 0 100px rgba(0, 255, 127, 0.9), inset 0 0 40px rgba(0, 255, 127, 0.4);
         }
 
         /* --- 5. TEXT GLITCH EFFECT --- */
         .glitch-text {
             color: #FF00FF;
-            text-shadow: -2px 0 #00FFFF, 2px 0 #FF00FF;
-            animation: glitch-anim 4s infinite linear alternate-reverse;
+            text-shadow: -3px 0 #00FFFF, 3px 0 #ac00ac, 0 0 15px #FF00FF;
+            animation: glitch-anim 3s infinite linear alternate-reverse;
+            text-transform: uppercase;
         }
 
         @keyframes glitch-anim {
             0% {
-                text-shadow: -2px 0 #00FFFF;
+                text-shadow: -3px 0 #00FFFF;
+                transform: translate(0);
             }
 
-            2% {
-                text-shadow: 2px 0 #FF00FF;
+            25% {
+                text-shadow: 3px 0 #FF00FF;
+                transform: translate(-1px);
             }
 
-            4% {
-                text-shadow: -2px 0 #00FFFF;
+            50% {
+                text-shadow: -3px 0 #00FFFF;
+                transform: translate(1px);
+            }
+
+            75% {
+                text-shadow: 3px 0 #FF00FF;
+                transform: translate(-2px);
             }
 
             100% {
-                text-shadow: -1px 0 #00FFFF;
+                text-shadow: -2px 0 #00FFFF;
+                transform: translate(0);
             }
         }
 
-        /* --- 6. OVERLAY FULLSCREEN (ACCESS GRANTED) --- */
+        .fancy-header {
+            position: relative;
+            padding: 0.5rem 0;
+            margin-bottom: 0.5rem;
+        }
+
+        /* --- 6. OVERLAY FULLSCREEN --- */
         #successOverlay {
             position: fixed;
             top: 0;
@@ -215,35 +272,41 @@
             width: 100%;
             height: 100%;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.4s ease-in-out;
             z-index: 100;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(0, 0, 0, 0.95);
             pointer-events: none;
         }
 
-        /* --- 7. ELEMEN KECIL LAINNYA --- */
+        #overlayStatus {
+            font-size: 4rem;
+            font-weight: 900;
+            text-shadow: 0 0 30px currentColor;
+            animation: overlay-text-appear 1s forwards ease-out;
+        }
+
+        @media (min-width: 1024px) {
+            #overlayStatus {
+                font-size: 6rem;
+            }
+        }
+
+        /* --- 7. ELEMEN KECIL --- */
         .graph-bar {
-            width: 4px;
-            margin-right: 2px;
+            width: 5px;
+            margin-right: 3px;
             background-color: #00FF7F;
-            transition: height 0.2s;
+            transition: height 0.3s ease;
+            box-shadow: 0 0 5px #00FF7F;
         }
 
-        #dataStream p {
-            margin: 0;
-            font-size: 0.75rem;
-            line-height: 1.4;
-            opacity: 0.8;
-        }
-
-        /* Progress Bar Load */
         .loader-bar {
             width: 100%;
-            height: 6px;
+            height: 8px;
             background: #111;
             border: 1px solid #333;
             margin-top: 5px;
@@ -251,14 +314,31 @@
 
         .loader-fill {
             height: 100%;
-            background: #00FF7F;
+            background: linear-gradient(90deg, #00FFFF, #00FF7F);
             width: 100%;
+            transition: width 0.4s ease-out;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
         }
 
         .loader-fill-red {
             height: 100%;
-            background: #FF0055;
-            transition: width 0.3s;
+            background: linear-gradient(90deg, #FF0055, #FF5500);
+            transition: width 0.4s ease-out;
+            box-shadow: 0 0 8px rgba(255, 0, 85, 0.7);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00FFFF;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -267,52 +347,69 @@
 
     <div id="three-container"></div>
 
-    <div id="main-content" class="flex items-center justify-center min-h-screen p-4">
+    <div id="main-content" class="w-full p-2 lg:p-4">
 
         <div id="successOverlay">
-            <h2 id="overlayStatus" class="text-8xl font-extrabold text-white mb-4 tracking-tighter"
-                style="text-shadow: 0 0 20px currentColor;"></h2>
-            <p id="overlayMessage" class="text-3xl text-gray-200 font-mono"></p>
+            <h2 id="overlayStatus" class="text-white mb-4 tracking-tighter"></h2>
+            <p id="overlayMessage" class="font-mono text-2xl lg:text-3xl text-center"></p>
         </div>
 
-        <div class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6 p-4 lg:p-8">
+        <div class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6 mt-0 p-2">
 
-            <div class="col-span-1 flex flex-col gap-6 order-2 lg:order-1">
+            <div class="col-span-1 flex flex-col gap-4 order-2 lg:order-1">
+                <div class="widget-panel">
+                    <h2 class="widget-title">:: SYSTEM STATUS ::</h2>
+                    <div class="text-xs space-y-2">
+                        <div class="flex justify-between"><span class="text-gray-400">NETWORK</span><span
+                                id="networkStatus" class="text-green-500 font-bold">25ms (OK)</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">CAMERA</span><span
+                                id="cameraStatus" class="text-green-500 font-bold">ACTIVE</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">DB SYNC</span><span id="dbStatus"
+                                class="text-amber-500 font-bold">PENDING</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">CORE</span><span
+                                class="text-green-500 font-bold">ONLINE</span></div>
+                    </div>
+                </div>
+
                 <div class="widget-panel">
                     <h2 class="widget-title">:: SYSTEM TIME ::</h2>
-                    <p id="clock" class="text-5xl font-mono text-center text-cyan-400 font-extrabold tracking-widest">
+                    <p id="clock"
+                        class="text-5xl font-mono text-center text-cyan-400 font-extrabold tracking-widest leading-none">
                     </p>
                 </div>
 
                 <div class="widget-panel">
                     <h2 class="widget-title">:: TARGET DATA ::</h2>
-                    <div class="space-y-2">
+                    <div class="space-y-3">
                         <div>
-                            <p class="text-xs text-gray-400">IDENTITY SIGNAL</p>
+                            <p class="text-xs text-gray-400">IDENTITY</p>
                             <p id="userIdDisplay" class="text-xl font-bold text-cyan-400 truncate">SCANNING...</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-400">AUTHORIZATION LEVEL</p>
+                            <p class="text-xs text-gray-400">AUTH LEVEL</p>
                             <p id="userStatusDisplay" class="text-lg font-bold text-red-500">LOCKED</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-400">LAST TIMESTAMP</p>
+                            <p class="text-xs text-gray-400">LAST LOG</p>
                             <p id="lastActionDisplay" class="text-md font-mono text-amber-400">--:--:--</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="widget-panel flex-grow h-48">
+                <div class="widget-panel flex-grow h-32 lg:h-auto">
                     <h2 class="widget-title">:: KERNEL LOG ::</h2>
-                    <div id="systemLog" class="text-xs h-full overflow-y-auto font-mono space-y-1 scrollbar-hide">
+                    <div id="systemLog" class="text-xs h-full overflow-y-auto font-mono space-y-1">
                         <p class="text-green-500">> System Init: OK</p>
-                        <p class="text-amber-500">> Neural Net: Loaded</p>
                     </div>
                 </div>
             </div>
 
-            <div class="col-span-1 lg:col-span-2 flex flex-col items-center justify-center gap-4 order-1 lg:order-2">
-                <h1 class="text-4xl font-extrabold glitch-text tracking-widest text-center">BIOMETRIC GATEWAY</h1>
+            <div class="col-span-1 lg:col-span-2 flex flex-col items-center justify-start gap-4 order-1 lg:order-2">
+                <div class="fancy-header w-full text-center">
+                    <h1 class="text-4xl lg:text-5xl font-extrabold glitch-text tracking-widest text-center">BIOMETRIC
+                        GATEWAY</h1>
+                    <p class="text-xs text-cyan-700 mt-1 font-mono">SECURE ACCESS POINT: A-9 // [CONNECTED]</p>
+                </div>
 
                 <div id="videoContainer" class="video-container max-w-full">
                     <video id="videoElement" autoplay muted playsinline></video>
@@ -321,23 +418,35 @@
                 </div>
 
                 <div class="w-full bg-gray-900/80 border border-cyan-500/30 p-3 rounded text-center backdrop-blur-sm">
-                    <p id="statusMessage" class="text-xl font-bold text-gray-300 animate-pulse">INITIALIZING SENSORS...
+                    <p id="statusMessage"
+                        class="text-xl lg:text-2xl font-bold text-gray-300 transition-colors duration-300">
+                        INITIALIZING SENSORS...
                     </p>
                 </div>
             </div>
 
-            <div class="col-span-1 flex flex-col gap-6 order-3">
+            <div class="col-span-1 flex flex-col gap-4 order-3">
                 <div class="widget-panel">
                     <h2 class="widget-title">:: DIAGNOSTICS ::</h2>
-                    <div class="flex flex-col gap-3">
+                    <div class="flex flex-col gap-4">
                         <div>
-                            <div class="flex justify-between text-xs mb-1"><span>CPU LOAD</span><span>12%</span></div>
+                            <div class="flex justify-between text-xs mb-1"><span>CPU LOAD</span><span
+                                    id="cpuLoad">12%</span></div>
                             <div class="loader-bar">
-                                <div class="loader-fill" style="width: 12%;"></div>
+                                <div id="cpuLoadBar" class="loader-fill" style="width: 12%;"></div>
                             </div>
                         </div>
                         <div>
-                            <div class="flex justify-between text-xs mb-1"><span>MATCH CONFIDENCE</span></div>
+                            <div class="flex justify-between text-xs mb-1"><span>MEMORY</span><span
+                                    id="memUsage">30%</span></div>
+                            <div class="loader-bar">
+                                <div id="memUsageBar" class="loader-fill"
+                                    style="width: 30%; background: linear-gradient(90deg, #FF00FF, #8A2BE2);"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1"><span>CONFIDENCE</span><span
+                                    id="matchConfidenceText">0%</span></div>
                             <div class="loader-bar">
                                 <div id="matchThresholdBar" class="loader-fill-red" style="width: 0%;"></div>
                             </div>
@@ -347,13 +456,12 @@
 
                 <div class="widget-panel h-40">
                     <h2 class="widget-title">:: WAVEFORM ::</h2>
-                    <div id="graph" class="h-full flex items-end justify-between gap-px overflow-hidden">
-                    </div>
+                    <div id="graph" class="h-full flex items-end justify-between gap-px overflow-hidden"></div>
                 </div>
 
-                <div class="widget-panel flex-grow h-48">
-                    <h2 class="widget-title">:: ENCRYPTED STREAM ::</h2>
-                    <div id="dataStream" class="h-full overflow-hidden font-mono text-xs opacity-75">
+                <div class="widget-panel flex-grow h-40 lg:h-auto">
+                    <h2 class="widget-title">:: DATA STREAM ::</h2>
+                    <div id="dataStream" class="h-full overflow-y-auto font-mono text-xs opacity-75">
                         <p class="text-cyan-700">Handshaking...</p>
                     </div>
                 </div>
@@ -363,116 +471,87 @@
     </div>
 
     <script>
-        // Inisialisasi Three.js untuk Background
-        const container = document.getElementById('three-container');
+        const threeContainer = document.getElementById('three-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x05050A, 0.002);
+        scene.fog = new THREE.FogExp2(0x05050A, 0.003);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
-        container.appendChild(renderer.domElement);
+        renderer.setClearColor(0x05050A, 1);
+        threeContainer.appendChild(renderer.domElement);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 5;
+        camera.position.set(0, 10, 50);
+        camera.lookAt(0, 0, 0);
 
-        // --- A. Starfield (Partikel Bintang) ---
-        const starGeo = new THREE.BufferGeometry();
-        const starCount = 6000;
-        const starPos = new Float32Array(starCount * 3);
-        for (let i = 0; i < starCount * 3; i++) {
-            starPos[i] = (Math.random() - 0.5) * 600;
+        const directionalLight = new THREE.DirectionalLight(0x00FFFF, 0.8);
+        directionalLight.position.set(10, 50, 30);
+        scene.add(directionalLight);
+
+        const pointLight = new THREE.PointLight(0xFF00FF, 1.5, 200);
+        pointLight.position.set(-30, 20, -50);
+        scene.add(pointLight);
+        scene.add(new THREE.AmbientLight(0x0A0A0A));
+
+        const createDynamicGrid = (size, divisions, color1, color2, yPosition) => {
+            const gridGroup = new THREE.Group();
+            const geometry = new THREE.BufferGeometry();
+            const positions = [], colors = [];
+            const material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
+
+            for (let i = 0; i <= divisions; i++) {
+                const x = (i / divisions - 0.5) * size;
+                positions.push(x, yPosition, -size / 2, x, yPosition, size / 2);
+                colors.push(color1.r, color1.g, color1.b, color2.r, color2.g, color2.b);
+                const z = (i / divisions - 0.5) * size;
+                positions.push(-size / 2, yPosition, z, size / 2, yPosition, z);
+                colors.push(color1.r, color1.g, color1.b, color2.r, color2.g, color2.b);
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            gridGroup.add(new THREE.LineSegments(geometry, material));
+            return gridGroup;
+        };
+
+        const grid1 = createDynamicGrid(200, 100, new THREE.Color(0x00FFFF), new THREE.Color(0x00FF7F), 0);
+        scene.add(grid1);
+        const grid2 = createDynamicGrid(150, 75, new THREE.Color(0xFF00FF), new THREE.Color(0x00FFFF), 20);
+        scene.add(grid2);
+
+        const codeGeo = new THREE.BufferGeometry();
+        const codeCount = 8000;
+        const codePositions = new Float32Array(codeCount * 3), codeColors = new Float32Array(codeCount * 3);
+        const c1 = new THREE.Color(0x00FFFF), c2 = new THREE.Color(0xFF00FF), c3 = new THREE.Color(0x00FF7F);
+
+        for (let i = 0; i < codeCount * 3; i += 3) {
+            codePositions[i] = (Math.random() - 0.5) * 800;
+            codePositions[i + 1] = (Math.random() - 0.5) * 400 + 100;
+            codePositions[i + 2] = (Math.random() - 0.5) * 800;
+            const r = Math.random();
+            if (r < 0.33) c1.toArray(codeColors, i); else if (r < 0.66) c2.toArray(codeColors, i); else c3.toArray(codeColors, i);
         }
-        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-        const starMat = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.15, transparent: true });
-        const starField = new THREE.Points(starGeo, starMat);
-        scene.add(starField);
+        codeGeo.setAttribute('position', new THREE.BufferAttribute(codePositions, 3));
+        codeGeo.setAttribute('color', new THREE.BufferAttribute(codeColors, 3));
+        const codeStream = new THREE.Points(codeGeo, new THREE.PointsMaterial({ size: 0.3, vertexColors: true, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending }));
+        scene.add(codeStream);
 
-        // --- B. Flux Nodes (Titik-titik Hijau Mengambang) ---
-        const nodeGeo = new THREE.BufferGeometry();
-        const nodeCount = 300;
-        const nodePos = new Float32Array(nodeCount * 3);
-        for (let i = 0; i < nodeCount * 3; i += 3) {
-            nodePos[i] = (Math.random() - 0.5) * 50;
-            nodePos[i + 1] = (Math.random() - 0.5) * 50;
-            nodePos[i + 2] = (Math.random() - 0.5) * 50 - 10;
-        }
-        nodeGeo.setAttribute('position', new THREE.BufferAttribute(nodePos, 3));
-        const nodeMat = new THREE.PointsMaterial({ color: 0x00FF7F, size: 0.1, transparent: true, opacity: 0.6 });
-        const fluxNodes = new THREE.Points(nodeGeo, nodeMat);
-        scene.add(fluxNodes);
-
-        // --- C. Prisma Segitiga Raksasa (Latar Belakang) ---
-        const prismGeo = new THREE.CylinderGeometry(30, 30, 100, 3);
-
-        const prismInner = new THREE.Mesh(prismGeo, new THREE.MeshBasicMaterial({
-            color: 0xFF00FF, transparent: true, opacity: 0.05,
-            side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false
-        }));
-
-        const prismOuter = new THREE.Mesh(prismGeo, new THREE.MeshBasicMaterial({
-            color: 0x00FFFF, wireframe: true, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending
-        }));
-
-        const prismGroup = new THREE.Group();
-        prismGroup.add(prismInner);
-        prismGroup.add(prismOuter);
-        prismGroup.position.z = -60;
-        prismGroup.rotation.x = Math.PI / 2;
-        scene.add(prismGroup);
-
-        // --- D. Core Energi (Pusat) ---
-        const coreGeo = new THREE.SphereGeometry(2, 32, 32);
-        const coreMat = new THREE.MeshBasicMaterial({ color: 0x00FFFF, wireframe: true, transparent: true, opacity: 0.3 });
-        const core = new THREE.Mesh(coreGeo, coreMat);
-        core.position.z = -20;
-        scene.add(core);
-
-        // --- E. Grid Lantai Holografik BARU ---
-        const gridHelper = new THREE.GridHelper(50, 50, 0x00FF7F, 0x00FFFF);
-        gridHelper.position.y = -5; // Posisikan di bawah
-        gridHelper.material.opacity = 0.2;
-        gridHelper.material.transparent = true;
-        scene.add(gridHelper);
-
-        // --- F. Kubus Glitch BARU ---
-        const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
-        const cubeMat = new THREE.MeshBasicMaterial({ color: 0xFF00FF, wireframe: true, transparent: true, opacity: 0.2 });
-        const glitchCube = new THREE.Mesh(cubeGeo, cubeMat);
-        glitchCube.position.set(5, 0, -15);
-        scene.add(glitchCube);
-
-
-        // Loop Animasi Background
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Rotasi Bintang
-            starField.rotation.z += 0.0005;
-
-            // Rotasi Prisma
-            prismGroup.rotation.y += 0.002;
-
-            // Rotasi Core & Nodes
-            core.rotation.y -= 0.01;
-            core.rotation.x -= 0.005;
-            fluxNodes.rotation.y += 0.001;
-
-            // Rotasi Kubus Glitch
-            glitchCube.rotation.x += 0.02;
-            glitchCube.rotation.y += 0.01;
-
+        function animateThreeJS() {
+            requestAnimationFrame(animateThreeJS);
+            grid1.position.z += 0.1; if (grid1.position.z > 50) grid1.position.z = -150;
+            grid2.position.z += 0.08; if (grid2.position.z > 50) grid2.position.z = -150;
+            codeStream.rotation.y += 0.0005;
+            codeStream.position.y -= 0.05; if (codeStream.position.y < -200) codeStream.position.y = 200;
+            pointLight.position.x = Math.sin(Date.now() * 0.0002) * 50;
             renderer.render(scene, camera);
         }
 
-        // Handle Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        animate();
+        animateThreeJS();
     </script>
 
     <script src="scan.js"></script>

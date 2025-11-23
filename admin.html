@@ -581,410 +581,276 @@
                     <div class="pt-4">
                         <button id="submitRegisterBtn"
                             class="bg-indigo-700 hover:bg-indigo-600 text-white font-bold py-3 px-4 transition duration-300 w-full rounded-lg uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed"
-                            style="box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);" disabled>
-                            1. CAPTURE & REGISTER BIOMETRIC
+                            disabled>
+                            <span id="btnText">WAITING FOR FACE...</span>
                         </button>
                     </div>
-
-                    <p id="statusMessage" class="text-center font-bold text-lg h-8 mt-4 uppercase">
-                        INITIALIZING SYSTEM...
-                    </p>
                 </div>
             </div>
 
-            <div class="holo-panel p-4 rounded-2xl md:order-2 flex flex-col justify-center items-center">
-                <h2 class="holo-panel-header text-xl font-bold mb-2 pb-2 uppercase w-full text-center animated-divider">
-                    HOLOGRAPHIC BIOMETRIC ANALYZER (4D)</h2>
-                <div class="dot-indicators">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-
-                <div class="holographic-frame flex justify-center w-full aspect-video max-w-lg">
-                    <div class="video-container w-full h-full rounded-lg">
+            <div class="holo-panel p-4 rounded-2xl md:order-2">
+                <h2 class="holo-panel-header text-xl font-bold mb-2 pb-2 uppercase">VISUAL ANALYZER</h2>
+                <div class="holographic-frame relative">
+                    <div class="video-container relative" style="aspect-ratio: 4/3;">
                         <video id="videoElement" autoplay muted playsinline
-                            class="w-full h-full bg-black rounded-lg"></video>
-                        <canvas id="overlay" class="rounded-lg"></canvas>
-                        <div class="scanner-line rounded-lg"></div>
-
+                            class="w-full h-full object-cover rounded"></video>
+                        <canvas id="overlay" class="absolute top-0 left-0 w-full h-full"></canvas>
+                        <div class="scanner-line"></div>
                     </div>
                 </div>
-                <div class="data-wave"></div>
-                <div class="text-xs text-indigo-400 mt-1">BIOMETRIC SIGNAL ANALYSIS / DEPTH MAPPING</div>
-
-                <div class="w-full mt-6 flex justify-between items-center space-x-4">
-                    <div class="flex-1">
-                        <h3 class="text-sm uppercase mb-2 text-white text-center"
-                            style="text-shadow: 0 0 5px var(--status-green);">:: F-PTS RADAR ::</h3>
-                        <div class="fpts-display">
-                            <div id="fptsMarker"></div>
-                        </div>
-                    </div>
-
-                    <div class="flex-1 space-y-2 text-sm">
-                        <div class="border-b border-indigo-700 pb-1 animated-divider">
-                            <span class="text-indigo-400">ALIGNMENT_X:</span>
-                            <span id="alignX" class="float-right text-base text-status-green"
-                                style="color: var(--status-green);">0.00°</span>
-                        </div>
-                        <div class="border-b border-indigo-700 pb-1 animated-divider">
-                            <span class="text-indigo-400">ALIGNMENT_Y:</span>
-                            <span id="alignY" class="float-right text-base text-status-green"
-                                style="color: var(--status-green);">0.00°</span>
-                        </div>
-                        <div class="border-b border-indigo-700 pb-1 animated-divider">
-                            <span class="text-indigo-400">FOCUS_LEVEL:</span>
-                            <span id="focusLevel" class="float-right text-base text-status-green"
-                                style="color: var(--status-green);">100%</span>
-                        </div>
-                        <div class="pt-1">
-                            <span class="text-indigo-400">STATUS:</span>
-                            <span id="fptsStatus" class="float-right text-base font-bold"
-                                style="color: var(--status-green);">[WAITING_MODEL]</span>
-                        </div>
-                    </div>
-                </div>
+                <div class="data-flow-bar"></div>
+                <p id="faceStatus" class="text-lg text-center mt-2 text-red-500">INITIATING CAMERA...</p>
             </div>
 
-            <div class="holo-panel p-6 rounded-2xl md:order-3">
-                <h2 class="holo-panel-header text-xl font-bold mb-2 pb-2 uppercase animated-divider">SYSTEM METRICS</h2>
-                <div class="dot-indicators">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
+            <div class="holo-panel p-6 rounded-2xl md:order-3 flex flex-col">
+                <h2 class="holo-panel-header text-xl font-bold mb-2 pb-2 uppercase">SYSTEM LOG STREAM</h2>
+                <div id="logStream" class="flex-1 overflow-y-auto text-xs space-y-1 h-64 md:h-auto"
+                    style="max-height: 400px;">
                 </div>
-
-                <div class="space-y-4 text-sm">
-                    <div class="border-b border-indigo-700 pb-2 animated-divider">
-                        <span class="text-indigo-400">TIME_STAMP:</span>
-                        <span id="systemTime" class="float-right text-white"
-                            style="text-shadow: 0 0 8px var(--aether-blue);">--:--:--</span>
-                    </div>
-
-                    <div class="border-b border-indigo-700 pb-2 animated-divider">
-                        <span class="text-indigo-400">CPU_LOAD:</span>
-                        <span id="cpuLoad" class="float-right text-violet-400">0%</span>
-                    </div>
-                    <div class="border-b border-indigo-700 pb-2 animated-divider">
-                        <span class="text-indigo-400">MEMORY_ALLOC:</span>
-                        <span id="memoryAlloc" class="float-right text-violet-400">0 MB</span>
-                    </div>
-                    <div class="border-b border-indigo-700 pb-2 animated-divider">
-                        <span class="text-indigo-400">NET_LATENCY:</span>
-                        <span id="latency" class="float-right text-violet-400">0 ms</span>
-                    </div>
-                    <div class="border-b border-indigo-700 pb-2 animated-divider">
-                        <span class="text-indigo-400">FACE_DET_FPS:</span>
-                        <span id="fps" class="float-right text-violet-400">--</span>
-                    </div>
-                </div>
-
-                <div class="mt-6">
-                    <h3 class="text-sm uppercase mb-2 text-white" style="text-shadow: 0 0 5px var(--aether-blue);">::
-                        REAL-TIME BIOMETRIC DATA STREAM ::</h3>
-                    <div class="data-flow-bar rounded-full"></div>
-                    <div id="logStream"
-                        class="h-40 overflow-y-auto mt-2 p-2 bg-black rounded-lg border border-indigo-900 text-xs">
-                        <p class="text-xs text-indigo-500">Log 1: Initiating Secure Channel...</p>
-                        <p class="text-xs text-indigo-500">Log 2: System Power Core Nominal.</p>
-                        <p class="text-xs text-indigo-500">Log 3: Awaiting Model Load Confirmation...</p>
-                    </div>
-                </div>
+                <div class="data-wave mx-auto"></div>
             </div>
         </div>
     </div>
 
+    <div id="regSuccessOverlay"
+        class="fixed inset-0 bg-black bg-opacity-95 backdrop-blur-sm flex flex-col items-center justify-center z-[100] opacity-0 pointer-events-none transition-opacity duration-500">
+        <div class="text-center p-12 border-4 border-green-500 rounded-xl"
+            style="box-shadow: 0 0 60px var(--status-green), inset 0 0 30px var(--status-green); background-color: rgba(0, 0, 0, 0.8);">
+            <h2 id="overlayTitle" class="text-7xl font-black tracking-widest uppercase mb-6 plasma-flicker-text"
+                style="color: var(--status-green); text-shadow: 0 0 20px var(--status-green);">
+                :: TRANSMISSION COMPLETE ::
+            </h2>
+            <p id="overlayMessage" class="text-3xl text-white tracking-wider">
+                DATA BIOMETRIK BERHASIL DIARSIPKAN KE JARINGAN AETHER.
+            </p>
+            <p class="text-xl text-gray-400 mt-6">
+                SUBJECT ID: <span id="overlayRegId" class="text-white font-bold tracking-widest"></span>
+            </p>
+        </div>
+    </div>
+
     <script>
-        // Global variables for Firebase access (Dummy values for front-end focus)
-        let db, auth;
-        const appId = 'DUMMY_APP_ID';
-        const firebaseConfig = { apiKey: "dummy", authDomain: "dummy", projectId: "dummy" };
-        const initialAuthToken = null;
-
-        // --- GLOBAL STATE VARIABLES (KRITIS) ---
-        let isFaceDetected = false;
-        let currentFaceDescriptor = null;
-
-        // DOM Elements
+        // --- DOM Elements ---
         const video = document.getElementById('videoElement');
         const canvas = document.getElementById('overlay');
-        const statusMessage = document.getElementById('statusMessage');
+        const thresholdFill = document.getElementById('thresholdFill');
+        const thresholdStatus = document.getElementById('thresholdStatus');
+        const faceStatus = document.getElementById('faceStatus');
         const submitRegisterBtn = document.getElementById('submitRegisterBtn');
-        const spindleLoading = document.getElementById('spindleLoading');
         const regIdKaryawan = document.getElementById('regIdKaryawan');
         const regNama = document.getElementById('regNama');
-        const thresholdStatus = document.getElementById('thresholdStatus');
-        const thresholdFill = document.getElementById('thresholdFill');
-        const alignX = document.getElementById('alignX');
-        const alignY = document.getElementById('alignY');
-        const fptsMarker = document.getElementById('fptsMarker');
-        const fptsStatus = document.getElementById('fptsStatus');
-        const fpsDisplay = document.getElementById('fps');
-        const systemTime = document.getElementById('systemTime');
+        const btnText = document.getElementById('btnText');
+        const logStream = document.getElementById('logStream');
+        const spindleLoading = document.getElementById('spindleLoading');
+        const rotatingCube = document.getElementById('rotatingCube');
 
-        const THRESHOLD_MIN = 0.85; // Confidence minimal (85%) untuk aktivasi tombol
+        // --- Configuration ---
+        const CURRENT_MODEL_URL = './models';
+        const FACE_THRESHOLD = 0.5;
+        const DETECTION_INTERVAL_MS = 100;
 
-        // Path Model
-        const MODEL_URL_RELATIF = './models';
-        const MODEL_URL_CDN = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models';
-        let CURRENT_MODEL_URL = MODEL_URL_RELATIF;
+        let faceDescriptor = null;
+        let detectionInterval = null;
+        let lastDetectionTime = 0;
 
-        const detectionOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
-        let detectionInterval;
-        let lastUpdateTime = performance.now();
+        // =====================================================================
+        // 1. LOG STREAM UTILITY
+        // =====================================================================
 
-        // Utility function to add messages to the log stream
-        function addToLogStream(message, color = 'text-indigo-500') {
-            const logStream = document.getElementById('logStream');
+        function addToLogStream(message, color = 'var(--aether-blue)') {
             const p = document.createElement('p');
             p.className = `text-xs ${color.startsWith('var(') ? '' : color}`;
-            p.style.color = color.startsWith('var(') ? color : '';
-            p.textContent = message;
-            if (logStream.children.length > 15) {
-                logStream.removeChild(logStream.children[0]);
-            }
-            logStream.appendChild(p);
-            logStream.scrollTop = logStream.scrollHeight;
-        }
-
-        // Utility for system time
-        function updateSystemTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-            systemTime.textContent = timeString;
-        }
-        setInterval(updateSystemTime, 1000);
-
-        // --- KRITIS: FUNGSI AKTIVASI TOMBOL ---
-        function checkInputAndDetection() {
-            const idValue = regIdKaryawan.value.trim();
-            const nameValue = regNama.value.trim();
-
-            const isInputValid = idValue !== '' && nameValue !== '';
-            const shouldBeActive = isInputValid && isFaceDetected;
-
-            if (shouldBeActive) {
-                submitRegisterBtn.disabled = false;
-                submitRegisterBtn.classList.remove('opacity-30', 'disabled:cursor-not-allowed', 'bg-indigo-700', 'hover:bg-indigo-600');
-                submitRegisterBtn.style.backgroundColor = 'var(--aether-blue)';
-                submitRegisterBtn.style.color = 'black';
-                submitRegisterBtn.style.boxShadow = '0 0 20px var(--aether-blue)';
-                submitRegisterBtn.textContent = '1. CAPTURE & REGISTER BIOMETRIC (ACTIVE)';
-            } else {
-                submitRegisterBtn.disabled = true;
-                submitRegisterBtn.classList.add('opacity-30', 'disabled:cursor-not-allowed', 'bg-indigo-700', 'hover:bg-indigo-600');
-                submitRegisterBtn.style.backgroundColor = '';
-                submitRegisterBtn.style.color = '';
-                submitRegisterBtn.style.boxShadow = '0 0 15px rgba(138, 43, 226, 0.5)';
-                submitRegisterBtn.textContent = '1. CAPTURE & REGISTER BIOMETRIC';
+            p.textContent = `[${new Date().toLocaleTimeString('en-US')}] ${message}`;
+            logStream.prepend(p);
+            // Limit log count
+            if (logStream.children.length > 50) {
+                logStream.removeChild(logStream.lastChild);
             }
         }
 
-        // --- FUNGSI UTAMA DETEKSI ---
-        async function updateDetection() {
-            if (video.paused || video.ended) return;
+        // =====================================================================
+        // 2. VIDEO & MODEL LOADING
+        // =====================================================================
 
-            const detection = await faceapi.detectSingleFace(video, detectionOptions)
+        async function loadModels() {
+            addToLogStream('LOADING CORE MODELS...', 'text-yellow-500');
+            spindleLoading.classList.add('active');
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(CURRENT_MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(CURRENT_MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(CURRENT_MODEL_URL)
+                ]);
+                addToLogStream('NEURAL MODELS READY', 'var(--status-green)');
+                spindleLoading.classList.remove('active');
+                await startVideo();
+            } catch (error) {
+                addToLogStream(`MODEL LOAD FAILED: ${error.message}`, 'var(--warning-red)');
+                faceStatus.textContent = 'ERROR: MODEL FAILED TO LOAD';
+            }
+        }
+
+        async function startVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                addToLogStream('CAMERA STREAM ACTIVE', 'var(--aether-blue)');
+            } catch (err) {
+                addToLogStream(`CAMERA ACCESS DENIED: ${err.message}`, 'var(--warning-red)');
+                faceStatus.textContent = 'CAMERA ACCESS DENIED';
+            }
+        }
+
+        // =====================================================================
+        // 3. FACE DETECTION LOOP
+        // =====================================================================
+
+        video.addEventListener('play', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            faceStatus.textContent = 'SCANNING...';
+
+            if (detectionInterval) clearInterval(detectionInterval);
+            detectionInterval = setInterval(detectFace, DETECTION_INTERVAL_MS);
+        });
+
+        async function detectFace() {
+            if (video.paused || video.ended || !faceapi.nets.tinyFaceDetector.params) return;
+
+            const now = Date.now();
+            if (now - lastDetectionTime < DETECTION_INTERVAL_MS) return;
+            lastDetectionTime = now;
+
+            const displaySize = { width: video.videoWidth, height: video.videoHeight };
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
                 .withFaceLandmarks()
                 .withFaceDescriptor();
 
-            // Hitung FPS
-            const now = performance.now();
-            const elapsed = now - lastUpdateTime;
-            const fps = (1000 / elapsed).toFixed(1);
-            fpsDisplay.textContent = fps;
-            lastUpdateTime = now;
+            if (detections) {
+                const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                const { box } = resizedDetections.detection;
+                const { landmarks } = resizedDetections;
 
-            if (detection) {
-                // 1. Update Threshold Bar
-                const confidence = detection.detection.score;
-                const percent = (confidence * 100).toFixed(0);
-                thresholdFill.style.width = `${percent}%`;
-                thresholdStatus.textContent = `${percent}%`;
+                // --- Visualization ---
+                faceapi.draw.drawDetections(canvas, resizedDetections.detection);
+                faceapi.draw.drawFaceLandmarks(canvas, resizedDetections.landmarks);
 
-                // 2. Cek Kondisi Wajah (Aktivasi)
-                if (confidence >= THRESHOLD_MIN) {
-                    isFaceDetected = true;
-                    currentFaceDescriptor = detection.descriptor;
-                    fptsStatus.textContent = "[LOCKED: READY]";
-                    statusMessage.textContent = "REGISTRATION READY. PRESS BUTTON.";
-                    thresholdFill.style.backgroundColor = 'var(--status-green)';
+                // --- Threshold & Status Update ---
+                const confidence = resizedDetections.detection.score;
+                const normalizedConfidence = Math.min(1, confidence / FACE_THRESHOLD); // Normalize to 1 for display
+                const confidencePercent = (normalizedConfidence * 100).toFixed(0);
+
+                thresholdFill.style.width = `${confidencePercent}%`;
+                thresholdStatus.textContent = `${confidencePercent}%`;
+
+                if (confidence >= FACE_THRESHOLD) {
+                    faceStatus.textContent = 'FACE LOCKED: READY FOR REGISTRATION';
+                    faceStatus.style.color = 'var(--status-green)';
+                    submitRegisterBtn.disabled = false;
+                    btnText.textContent = 'CAPTURE & REGISTER FACE';
+                    rotatingCube.classList.add('high-power');
+                    faceDescriptor = detections.descriptor;
                 } else {
-                    isFaceDetected = false;
-                    currentFaceDescriptor = null;
-                    fptsStatus.textContent = "[OUT OF RANGE]";
-                    statusMessage.textContent = "ALIGN FACE (CONFIDENCE LOW)";
-                    thresholdFill.style.backgroundColor = 'var(--aether-blue)';
+                    faceStatus.textContent = 'FACE DETECTED: ADJUST POSITION';
+                    faceStatus.style.color = 'text-yellow-500';
+                    submitRegisterBtn.disabled = true;
+                    btnText.textContent = 'WAITING FOR FACE...';
+                    faceDescriptor = null;
+                    rotatingCube.classList.remove('high-power');
                 }
-
-                // 3. Gambar Deteksi
-                const displaySize = { width: video.videoWidth, height: video.videoHeight };
-                const resizedDetections = faceapi.resizeResults(detection, displaySize);
-                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-                faceapi.draw.drawFaceLandmarks(canvas, resizedDetections, { drawLines: true, color: 'rgba(0, 234, 255, 0.7)' });
-
-                // Update marker dan alignment (Contoh sederhana)
-                const box = resizedDetections.detection.box;
-                const centerX = box.x + box.width / 2;
-                const centerY = box.y + box.height / 2;
-
-                const videoCenterX = video.videoWidth / 2;
-                const videoCenterY = video.videoHeight / 2;
-
-                const diffX = (centerX - videoCenterX) / videoCenterX * 10;
-                const diffY = (centerY - videoCenterY) / videoCenterY * 10;
-
-                fptsMarker.style.transform = `translate(${diffX.toFixed(2)}px, ${diffY.toFixed(2)}px)`;
-                alignX.textContent = `${(diffX).toFixed(2)}°`;
-                alignY.textContent = `${(diffY).toFixed(2)}°`;
-
-
             } else {
-                // Tidak ada wajah terdeteksi
+                faceStatus.textContent = 'NO FACE DETECTED';
+                faceStatus.style.color = 'var(--warning-red)';
                 thresholdFill.style.width = '0%';
                 thresholdStatus.textContent = '0%';
-                fptsStatus.textContent = "[NO_TARGET]";
-                statusMessage.textContent = "AWAITING BIOMETRIC TARGET...";
-                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-                isFaceDetected = false;
-                currentFaceDescriptor = null;
-                thresholdFill.style.backgroundColor = 'var(--aether-blue)';
+                submitRegisterBtn.disabled = true;
+                btnText.textContent = 'WAITING FOR FACE...';
+                faceDescriptor = null;
+                rotatingCube.classList.remove('high-power');
             }
-
-            checkInputAndDetection();
         }
 
-        // --- FUNGSI REGISTRASI (Dikirim ke Server.js) ---
-        async function registerFace() {
-            if (submitRegisterBtn.disabled || !currentFaceDescriptor) return;
+        // =====================================================================
+        // 4. REGISTRATION LOGIC
+        // =====================================================================
 
-            const idKaryawan = regIdKaryawan.value.trim().toUpperCase();
-            const nama = regNama.value.trim().toUpperCase();
-
+        async function registerFace(idKaryawan, namaKaryawan, descriptor) {
+            addToLogStream(`[SYS::REQ] MEMULAI REGISTRASI ID ${idKaryawan}...`, 'text-amber-500');
+            btnText.textContent = 'TRANSMITTING DATA...';
             submitRegisterBtn.disabled = true;
-            statusMessage.textContent = "PROCESSING DATA...";
 
             try {
-                // Kirim permintaan ke endpoint /api/register_face di server.js
                 const response = await fetch('/api/register_face', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         id_karyawan: idKaryawan,
-                        nama: nama,
-                        descriptor: Array.from(currentFaceDescriptor)
-                    }),
+                        nama: namaKaryawan,
+                        // Convert Float32Array to plain array for JSON serialization
+                        descriptor: Array.from(descriptor)
+                    })
                 });
 
                 const result = await response.json();
 
-                if (response.ok) {
-                    addToLogStream(`Log R: SUCCESS: ID ${idKaryawan} Registered.`, 'var(--status-green)');
-                    statusMessage.textContent = `[SUCCESS] ID: ${idKaryawan} SAVED.`;
+                if (response.ok && result.success) {
+                    // --- LOGIKA OVERLAY SUKSES BARU ---
+                    const overlay = document.getElementById('regSuccessOverlay');
+                    document.getElementById('overlayRegId').textContent = idKaryawan;
+
+                    // 1. Tampilkan Overlay
+                    overlay.classList.remove('opacity-0', 'pointer-events-none');
+
+                    // 2. Beri waktu, lalu sembunyikan
+                    setTimeout(() => {
+                        overlay.classList.add('opacity-0', 'pointer-events-none');
+                    }, 4500); // Overlay akan muncul selama 4.5 detik
+                    // -----------------------------------
+
+                    addToLogStream(`[SYS::AUTH] REGISTRASI SUKSES untuk ID ${idKaryawan}`, 'var(--status-green)');
+                    faceStatus.textContent = '✅ REGISTRASI SUKSES. DATA DISIMPAN.';
+
+                    // Reset form
                     regIdKaryawan.value = '';
                     regNama.value = '';
                 } else {
-                    addToLogStream(`Log R: ERROR: Registration Failed. Server: ${result.message || 'Unknown Error'}`, 'var(--warning-red)');
-                    statusMessage.textContent = `[ERROR] ${result.message || 'SERVER ERROR'}`;
+                    addToLogStream(`[SYS::ERR] REGISTRASI GAGAL: ${result.message}`, 'var(--warning-red)');
+                    faceStatus.textContent = `❌ ERROR: ${result.message || 'Server Gagal Merespon'}`;
                 }
 
             } catch (error) {
-                console.error("Registration failed:", error);
-                addToLogStream(`Log R: CRITICAL: Network/Server Error.`, 'var(--warning-red)');
-                statusMessage.textContent = `[ERROR] NETWORK FAILED.`;
+                addToLogStream(`[SYS::CONN] KONEKSI SERVER GAGAL: ${error.message}`, 'var(--warning-red)');
+                faceStatus.textContent = '❌ KONEKSI GAGAL. CEK SERVER.';
             } finally {
-                checkInputAndDetection();
+                btnText.textContent = 'WAITING FOR FACE...';
+                // Button remains disabled until face is locked again in detectFace loop
             }
         }
 
+        submitRegisterBtn.addEventListener('click', () => {
+            const idKaryawan = regIdKaryawan.value.trim().toUpperCase();
+            const namaKaryawan = regNama.value.trim();
 
-        // --- MODEL LOAD SETUP ---
-        async function loadModels() {
-            addToLogStream("Log 5: BIOMETRIC_CORE: Loading models...", 'text-yellow-500');
-            spindleLoading.classList.add('active');
-
-            try {
-                // Load semua model yang diperlukan
-                await faceapi.nets.tinyFaceDetector.loadFromUri(CURRENT_MODEL_URL);
-                await faceapi.nets.faceLandmark68Net.loadFromUri(CURRENT_MODEL_URL);
-                await faceapi.nets.faceRecognitionNet.loadFromUri(CURRENT_MODEL_URL);
-
-                addToLogStream("Log 6: BIOMETRIC_CORE: All models loaded. Status: NOMINAL.", 'var(--status-green)');
-                fptsStatus.textContent = "[MODEL_LOADED]";
-                spindleLoading.classList.remove('active');
-                statusMessage.textContent = "AWAITING CAMERA ACCESS...";
-
-                // Panggil startVideo setelah model dimuat
-                await startVideo();
-
-            } catch (error) {
-                // Fallback ke CDN jika path relatif gagal
-                if (CURRENT_MODEL_URL === MODEL_URL_RELATIF) {
-                    addToLogStream(`Log X: WARNING: Failed to load models from ${MODEL_URL_RELATIF}. Trying CDN fallback.`, 'text-yellow-500');
-                    CURRENT_MODEL_URL = MODEL_URL_CDN;
-                    return loadModels();
-                }
-                console.error("Face-API Model Loading Error:", error);
-                addToLogStream(`Log X: FATAL_ERROR: Model Load Failed. Check 'models/' folder.`, 'var(--warning-red)');
-                statusMessage.textContent = "[FATAL] MODEL LOAD FAILED.";
+            if (!idKaryawan || !namaKaryawan) {
+                alert('ID Karyawan dan Nama tidak boleh kosong.');
+                return;
             }
-        }
-
-        // --- KRITIS: FUNGSI AKSES KAMERA YANG DIPERBAIKI ---
-        async function startVideo() {
-            try {
-                // Minta akses kamera
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 640 }, height: { ideal: 480 } }
-                });
-
-                video.srcObject = stream;
-
-                // Menggunakan Promise untuk memastikan video siap dimainkan
-                return new Promise((resolve) => {
-                    video.addEventListener('loadedmetadata', () => {
-                        video.play();
-                        const displaySize = { width: video.videoWidth, height: video.videoHeight };
-                        faceapi.matchDimensions(canvas, displaySize);
-
-                        addToLogStream("Log 7.1: VIDEO_STREAM: Camera feed established. Status: ACTIVE.", 'var(--status-green)');
-                        addToLogStream(`Log 7.2: VIDEO_STREAM: Resolution Locked (${displaySize.width}x${displaySize.height}).`, 'var(--status-green)');
-                        detectionInterval = setInterval(updateDetection, 100); // Mulai deteksi wajah
-                        resolve();
-                    }, { once: true });
-                });
-
-            } catch (err) {
-                console.error("Error accessing camera: ", err);
-                let errorMessage = `Log X: FATAL_ERROR: Akses Kamera Gagal. Detail: ${err.name || 'Unknown'}.`;
-
-                if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-                    errorMessage = "Log X: FATAL_ERROR: Izin Kamera Ditolak. (Pastikan Anda mengakses dari HTTP/HTTPS atau Localhost).";
-                } else if (err.name === "NotFoundError") {
-                    errorMessage = "Log X: FATAL_ERROR: Tidak ada kamera ditemukan di perangkat.";
-                }
-
-                addToLogStream(errorMessage, 'var(--warning-red)');
-                statusMessage.textContent = "[FATAL] CAMERA ERROR.";
-                alert("Akses Kamera Gagal! Solusi: Pastikan Anda menjalankan file ini melalui server lokal (http://localhost) dan telah memberikan izin kamera.");
-                throw err; // Lempar error agar promise dari loadModels selesai
+            if (!faceDescriptor) {
+                alert('Wajah belum terkunci (threshold belum tercapai).');
+                return;
             }
-        }
 
-        // --- INITIALIZATION ---
-        function initApp() {
-            // Setup Listeners untuk input dan tombol
-            regIdKaryawan.addEventListener('input', checkInputAndDetection);
-            regNama.addEventListener('input', checkInputAndDetection);
-            submitRegisterBtn.addEventListener('click', registerFace);
+            registerFace(idKaryawan, namaKaryawan, faceDescriptor);
+        });
 
-            // Mulai proses
-            loadModels();
-        }
 
-        document.addEventListener('DOMContentLoaded', initApp);
+        // --- INIT ---
+        window.onload = loadModels;
+
     </script>
-</body>node s
+</body>
 
 </html>

@@ -4,552 +4,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D CYBER ANALYTICS DASHBOARD | INTELLIGENCE MODE</title>
+    <title>REKAP DATA KERNEL - Interstellar Ops</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 
     <style>
-        /* TEMA DASAR CYBERPUNK */
+        /* --- 1. GLOBAL STYLES & FONTS --- */
         body {
             margin: 0;
-            overflow-x: hidden;
-            background-color: #0f172a;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            background-color: #030308;
+            /* Darker Abyss */
+            color: #00FFFF;
+            /* Neon Cyan */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Neon Glow */
-        .neon-glow {
-            text-shadow: 0 0 7px #0ff, 0 0 15px #0ff;
-            color: #0ffffa;
-        }
-
-        .neon-target {
-            color: #0ff !important;
-        }
-
-        .neon-eval {
-            color: #ff0 !important;
-        }
-
-        /* Glitch Container */
-        .glitch-panel {
-            background: rgba(15, 23, 42, 0.95);
-            border: 2px solid #0ff3;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        /* --- 2. FUTURISTIC PANEL STYLES --- */
+        .recap-panel {
+            background-color: rgba(6, 15, 20, 0.85);
+            border: 1px solid #00FFFF;
+            padding: 1.5rem;
+            border-radius: 6px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4), inset 0 0 10px rgba(0, 255, 255, 0.2);
             position: relative;
             overflow: hidden;
-            color: #ecf0f1;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease-in-out;
         }
 
-        /* Scanline Overlay */
-        .glitch-panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3) 1px, transparent 1px, transparent 2px);
-            opacity: 0.1;
-            z-index: 10;
+        .recap-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00FFFF;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.5);
+            padding-bottom: 0.8rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 15px #00FFFF;
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
 
-        /* Glitch Full Screen Animation */
-        .flicker {
-            animation: flicker 0.005s infinite alternate;
+        /* --- 3. UTILITY & EFFECT STYLES --- */
+        .neon-text-green {
+            color: #00FF7F;
+            text-shadow: 0 0 10px #00FF7F;
         }
 
-        @keyframes flicker {
-            0% {
-                filter: hue-rotate(0deg) contrast(1.1);
-                transform: translate(0.5px, 0.5px);
-            }
-
-            5% {
-                filter: hue-rotate(0deg) contrast(1);
-                transform: translate(-0.5px, -0.5px);
-            }
-
-            10% {
-                filter: hue-rotate(5deg) contrast(1.1);
-                transform: translate(1px, 0.5px);
-            }
-
-            20% {
-                filter: hue-rotate(0deg) contrast(1.2);
-                transform: translate(-1px, 0px);
-            }
-
-            100% {
-                filter: hue-rotate(0deg) contrast(1);
-            }
+        .neon-text-red {
+            color: #FF0055;
+            text-shadow: 0 0 10px #FF0055;
         }
 
-        /* Alert Panel Khusus Intelligence */
-        #alertPanel {
-            border: 2px solid #ff4500;
-            /* OrangeRed Border */
-            box-shadow: 0 0 15px #ff450080;
-            /* Glowing Red Shadow */
-            background-color: rgba(255, 69, 0, 0.1);
-            /* Subtle Red Background */
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px dashed rgba(0, 255, 255, 0.1);
         }
 
-        /* Loader */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0ff;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
+        .data-table th {
+            color: #FF00FF;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            border-bottom: 2px solid #00FFFF;
         }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+        /* Scrollbar styling untuk tabel log */
+        .log-container::-webkit-scrollbar {
+            width: 6px;
         }
 
-        /* Three.js */
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: #0f172a;
+        .log-container::-webkit-scrollbar-track {
+            background: rgba(0, 255, 255, 0.1);
         }
 
-        /* PRINT STYLES */
-        @media print {
-
-            #canvas-container,
-            .no-print,
-            .flicker,
-            .glitch-panel::before,
-            #alertPanel {
-                display: none !important;
-            }
-
-            body {
-                background: white !important;
-                color: black !important;
-            }
-
-            .glitch-panel {
-                background: white !important;
-                box-shadow: none !important;
-                border: 1px solid #ddd !important;
-                color: black !important;
-            }
-
-            .neon-glow,
-            .text-white,
-            .neon-target,
-            .neon-eval {
-                text-shadow: none !important;
-                color: black !important;
-                -webkit-text-fill-color: black !important;
-            }
-
-            table,
-            th,
-            td {
-                border-color: black !important;
-            }
-
-            .signature-area {
-                display: flex !important;
-                margin-top: 50px;
-            }
+        .log-container::-webkit-scrollbar-thumb {
+            background: #00FFFF;
+            border-radius: 10px;
+            box-shadow: 0 0 5px #00FFFF;
         }
     </style>
 </head>
 
-<body class="font-sans antialiased text-gray-800">
+<body class="p-8">
 
-    <div id="canvas-container"></div>
+    <div class="max-w-7xl mx-auto w-full space-y-8">
 
-    <div id="flicker-area" class="min-h-screen flex flex-col items-center justify-start pt-10 px-4 pb-10 text-white">
+        <header class="text-center pb-4 pt-4 border-b border-cyan-500/50">
+            <p class="text-xl text-cyan-600 font-mono tracking-widest mb-2">ACCESS LEVEL: OMEGA</p>
+            <h1 class="text-6xl font-extrabold text-white text-shadow-xl tracking-tighter"
+                style="text-shadow: 0 0 20px #FF00FF, 0 0 40px #00FFFF;">
+                KERNEL DATA RECAP
+            </h1>
+        </header>
 
-        <div class="glitch-panel w-full max-w-6xl rounded-lg p-8 relative">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-            <div class="flex justify-between items-end border-b border-gray-700/50 pb-6 mb-6">
-                <div>
-                    <h1
-                        class="text-4xl font-black neon-glow text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
-                        ANALYTICS & KPI DASHBOARD
-                    </h1>
-                    <p class="text-gray-400 mt-1 font-medium">Visualisasi 3D Data Kinerja Karyawan</p>
-                </div>
-                <div class="text-right">
-                    <div class="text-sm text-gray-500 mb-1">SELECTED PERIOD</div>
-                    <div class="text-3xl font-bold neon-glow text-cyan-400" id="currentDateDisplay">INIT...</div>
-                </div>
-            </div>
-
-            <div id="alertPanel" class="p-4 rounded-lg mb-6 hidden">
-                <div class="flex items-center gap-3 border-b border-gray-700/50 pb-2 mb-2">
-                    <i class="fas fa-exclamation-triangle text-red-500 neon-glow text-xl"></i>
-                    <h2 class="text-lg font-bold text-red-400 neon-glow">INTELLIGENCE ALERT: Top 3 Evaluasi Kinerja</h2>
-                </div>
-                <div id="alertContent" class="flex flex-wrap gap-4 text-sm font-medium text-gray-200">
-                </div>
-            </div>
-
-
-            <div id="searchArea" class="flex flex-col sm:flex-row justify-between gap-4 mb-6 no-print">
-                <div class="flex gap-2 items-center">
-                    <label class="text-gray-400">Filter:</label>
-                    <select id="monthSelect" class="p-2 rounded bg-gray-900 border border-gray-700 text-cyan-400"
-                        onchange="loadData()"></select>
-                    <select id="yearSelect" class="p-2 rounded bg-gray-900 border border-gray-700 text-cyan-400"
-                        onchange="loadData()"></select>
-                </div>
-
-                <div class="relative flex-grow max-w-md">
-                    <input type="text" id="searchInput" onkeyup="handleSearch()" placeholder="RUN QUERY: ID/Nama..."
-                        class="w-full pl-4 pr-4 py-2 rounded-lg border border-cyan-500/50 focus:ring-2 focus:ring-cyan-500 bg-gray-900 shadow-xl transition-all text-white placeholder-gray-500">
-                </div>
-
-                <div class="flex gap-2">
-                    <button onclick="exportToCSV()"
-                        class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow transition">
-                        <i class="fas fa-file-excel"></i> Export CSV
-                    </button>
-                    <button onclick="window.print()"
-                        class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg shadow-xl transition flex items-center gap-2 font-semibold">
-                        <i class="fas fa-print"></i> PRINT REPORT
-                    </button>
+            <div class="recap-panel">
+                <h2 class="recap-title">:: SERVER STATUS ::</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">SERVER CORE</span>
+                        <span id="coreStatus" class="neon-text-green font-bold text-xl">ONLINE (Stable)</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">TOTAL ENTRIES</span>
+                        <span id="totalEntries" class="text-cyan-400 font-bold text-xl">--</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">AVG. WORK HOUR</span>
+                        <span id="avgJamKerja" class="neon-text-green font-bold text-xl">--</span>
+                    </div>
                 </div>
             </div>
 
-            <div id="loading" class="flex flex-col items-center justify-center py-10">
-                <div class="loader mb-2"></div>
-                <p class="text-cyan-400 font-semibold neon-glow">ACCESSING ANALYTICS CORE...</p>
-            </div>
-
-            <div id="tableContainer" class="overflow-hidden rounded-lg border border-cyan-500/20 shadow-lg hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-800 text-cyan-400">
-                            <th class="p-4 text-sm font-bold uppercase tracking-wider">ID</th>
-                            <th class="p-4 text-sm font-bold uppercase tracking-wider">Nama</th>
-                            <th class="p-4 text-sm font-bold uppercase tracking-wider text-right">Total Jam</th>
-                            <th class="p-4 text-sm font-bold uppercase tracking-wider text-center">Status KPI (170h)
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-gray-700/50 text-white">
-                    </tbody>
-                    <tfoot class="bg-gray-900 border-t border-cyan-500/50 font-bold text-gray-200">
-                        <tr>
-                            <td colspan="3" class="p-4 text-right uppercase text-xs text-gray-500">TOTAL WORKLOAD (All
-                                Data)</td>
-                            <td class="p-4 text-right text-lg neon-glow" id="grandTotal">0.00 HRS</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <div class="signature-area hidden justify-between px-10 mt-16 text-gray-800">
-                <div class="text-center">
-                    <p class="mb-20">SYSTEM LOG:</p>
-                    <p class="font-bold border-t border-black pt-2 w-48 mx-auto">MANAGER LEVEL-03</p>
+            <div class="recap-panel">
+                <h2 class="recap-title">:: RECAP STATISTICS ::</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">TOTAL JAM KERJA</span>
+                        <span id="totalJamKerja" class="neon-text-green font-bold text-xl">--</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">TOTAL KARYAWAN</span>
+                        <span id="totalKaryawan" class="text-cyan-400 font-bold text-xl">4 (SIMULASI)</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">FAILED ACCESS (Scan)</span>
+                        <span id="failedAccess" class="neon-text-red font-bold text-xl">109 (DUMMY)</span>
+                    </div>
                 </div>
             </div>
 
+            <div class="recap-panel">
+                <h2 class="recap-title">:: WORK HOUR TREND ::</h2>
+                <canvas id="rekapChart" width="400" height="200"></canvas>
+            </div>
         </div>
 
-        <p class="text-gray-600 text-xs mt-6 no-print">Three.js RENDER: FZ-001</p>
+        <div class="recap-panel">
+            <h2 class="recap-title">:: TOTAL WORK HOUR RECAP ::</h2>
+            <div class="log-container overflow-y-auto" style="max-height: 400px;">
+                <table class="data-table w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th class="w-1/12">ID KARYAWAN</th>
+                            <th class="w-3/12">NAMA</th>
+                            <th class="w-2/12">PERIODE</th>
+                            <th class="w-2/12 text-right">JAM DESIMAL</th>
+                            <th class="w-3/12 text-right">TOTAL JAM KERJA (H:M:S)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recapTableBody" class="text-gray-200">
+                        <tr>
+                            <td colspan="5" class="text-center text-amber-500 p-4">Loading data dari server...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
-    <script>
-        // ==========================================
-        // GLOBAL CONFIG & INIT
-        // ==========================================
-        const KPI_TARGET = 170; // Target Jam Kerja Bulanan
-        let globalData = [];
-        let meshGroup;
-        const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const currentYear = new Date().getFullYear();
-            const currentMonth = new Date().getMonth();
-            const monthSelect = document.getElementById('monthSelect');
-            const yearSelect = document.getElementById('yearSelect');
-
-            for (let i = 0; i < 12; i++) {
-                monthSelect.options.add(new Option(MONTH_NAMES[i], i + 1));
-            }
-            for (let y = currentYear; y >= currentYear - 4; y--) {
-                yearSelect.options.add(new Option(y, y));
-            }
-
-            monthSelect.value = currentMonth + 1;
-            yearSelect.value = currentYear;
-
-            loadData();
-        });
-
-        // ==========================================
-        // 1. DATA FETCHING, FILTERING & KPI LOGIC
-        // ==========================================
-
-        async function loadData() {
-            const loader = document.getElementById('loading');
-            const tableContainer = document.getElementById('tableContainer');
-            const tbody = document.getElementById('tableBody');
-            const month = document.getElementById('monthSelect').value;
-            const year = document.getElementById('yearSelect').value;
-
-            loader.classList.remove('hidden');
-            tableContainer.classList.add('hidden');
-            document.getElementById('currentDateDisplay').innerText = `${MONTH_NAMES[month - 1]} ${year}`;
-
-            const flickerArea = document.getElementById('flicker-area');
-            flickerArea.classList.add('flicker');
-            setTimeout(() => { flickerArea.classList.remove('flicker'); }, 500);
-
-            try {
-                const response = await fetch(`/api/rekap_jam_kerja?month=${month}&year=${year}`);
-                const result = await response.json();
-
-                if (result.success) {
-                    globalData = result.data.map(item => ({
-                        ...item,
-                        status: parseFloat(item.total_jam_kerja) >= KPI_TARGET ? 'Target Tercapai' : 'Perlu Evaluasi'
-                    }));
-                    renderTable(globalData);
-                    render3DVisuals(globalData);
-                } else {
-                    console.error('API Error:', result.message);
-                }
-
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-red-600 font-bold">QUERY ERROR: Server Node.js atau Database Gagal Dihubungi.</td></tr>`;
-                tableContainer.classList.remove('hidden');
-            } finally {
-                loader.classList.add('hidden');
-                tableContainer.classList.remove('hidden');
-            }
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('tableBody');
-            const grandTotalEl = document.getElementById('grandTotal');
-            tbody.innerHTML = '';
-            let grandTotal = 0;
-
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-500 italic">QUERY RESULT: Tidak ada data kinerja pada periode ini.</td></tr>`;
-                grandTotalEl.innerText = "0.00 HRS";
-                document.getElementById('alertPanel').classList.add('hidden'); // Sembunyikan Alert jika data kosong
-                return;
-            }
-
-            data.forEach(item => {
-                const jamKerja = parseFloat(item.total_jam_kerja);
-                grandTotal += jamKerja;
-
-                const statusClass = item.status === 'Target Tercapai' ? 'neon-target' : 'neon-eval';
-
-                const row = `
-                    <tr class="hover:bg-cyan-900/50 transition-colors duration-150">
-                        <td class="p-4 font-mono font-bold text-cyan-400">${item.id_karyawan}</td>
-                        <td class="p-4 font-medium">${item.nama}</td>
-                        <td class="p-4 text-right font-bold text-lg">${jamKerja.toFixed(2)} <span class="text-xs font-normal text-gray-500">HRS</span></td>
-                        <td class="p-4 text-center font-bold ${statusClass}">${item.status}</td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-
-            grandTotalEl.innerText = grandTotal.toFixed(2) + " HRS";
-
-            // Panggil Fungsi Intelligence
-            analyzePerformance(data);
-        }
-
-        function analyzePerformance(data) {
-            const alertPanel = document.getElementById('alertPanel');
-            const alertContent = document.getElementById('alertContent');
-
-            // 1. Filter yang Perlu Evaluasi (di bawah KPI)
-            let lowPerformers = data.filter(item => parseFloat(item.total_jam_kerja) < KPI_TARGET);
-
-            if (lowPerformers.length === 0) {
-                // Semua karyawan di atas target, sembunyikan panel
-                alertPanel.classList.add('hidden');
-                return;
-            }
-
-            // 2. Urutkan dari yang terendah (paling butuh perhatian)
-            lowPerformers.sort((a, b) => parseFloat(a.total_jam_kerja) - parseFloat(b.total_jam_kerja));
-
-            // 3. Ambil 3 Karyawan Teratas
-            const topAlerts = lowPerformers.slice(0, 3);
-
-            let htmlContent = '';
-            topAlerts.forEach((item, index) => {
-                const deficit = KPI_TARGET - parseFloat(item.total_jam_kerja);
-
-                htmlContent += `
-                    <div class="flex items-center gap-2 p-2 rounded-md bg-gray-800 border border-red-500/50">
-                        <span class="text-red-400 font-extrabold">${index + 1}.</span>
-                        <span>${item.nama} (${item.id_karyawan})</span>
-                        <span class="text-xs text-red-500">Defisit: ${deficit.toFixed(2)} HRS</span>
-                    </div>
-                `;
-            });
-
-            alertContent.innerHTML = htmlContent;
-            alertPanel.classList.remove('hidden');
-        }
-
-
-        function handleSearch() {
-            const keyword = document.getElementById('searchInput').value.toLowerCase();
-            const filteredData = globalData.filter(item =>
-                item.nama.toLowerCase().includes(keyword) ||
-                item.id_karyawan.toLowerCase().includes(keyword)
-            );
-            renderTable(filteredData);
-            render3DVisuals(filteredData);
-        }
-
-        function exportToCSV() {
-            if (globalData.length === 0) {
-                alert("Tidak ada data untuk diexport!");
-                return;
-            }
-
-            let csv = "ID Karyawan,Nama,Periode,Total Jam Kerja,Status KPI\n";
-            globalData.forEach(item => {
-                csv += `${item.id_karyawan},${item.nama},${item.periode_bulan},${item.total_jam_kerja},${item.status}\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Laporan_Kinerja_${document.getElementById('currentDateDisplay').innerText.replace(' ', '_')}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            alert("Data berhasil diexport!");
-        }
-
-
-        // ==========================================
-        // 2. VISUALISASI 3D BAR CHART (THREE.JS)
-        // ==========================================
-        let scene, camera, renderer, gridHelper, pointLight;
-        const MAX_HEIGHT = 15;
-        const SCALE_FACTOR = MAX_HEIGHT / 200;
-
-        function initThreeJS() {
-            const container = document.getElementById('canvas-container');
-            scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x0f172a, 0.005);
-
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
-
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            container.appendChild(renderer.domElement);
-
-            gridHelper = new THREE.GridHelper(50, 50, 0x00ffff, 0x00ffff);
-            gridHelper.material.opacity = 0.15;
-            gridHelper.material.transparent = true;
-            gridHelper.position.y = -5;
-            scene.add(gridHelper);
-
-            pointLight = new THREE.PointLight(0x00ffff, 1, 100);
-            pointLight.position.set(0, 5, 5);
-            scene.add(pointLight);
-
-            meshGroup = new THREE.Group();
-            scene.add(meshGroup);
-
-            camera.position.set(0, 5, 20);
-
-            const clock = new THREE.Clock();
-            function animate() {
-                requestAnimationFrame(animate);
-                const elapsedTime = clock.getElapsedTime();
-
-                gridHelper.position.z = (elapsedTime * 0.5) % 2;
-
-                meshGroup.rotation.y = Math.sin(elapsedTime * 0.1) * 0.2;
-
-                // Kamera mengikuti mouse halus
-                const mouseX = (window.innerWidth / 2 - event.clientX) * 0.001;
-                const mouseY = (window.innerHeight / 2 - event.clientY) * 0.001;
-                camera.position.x += (mouseX * 5 - camera.position.x) * 0.01;
-                camera.position.y += (-mouseY * 5 + 5 - camera.position.y) * 0.01;
-                camera.lookAt(meshGroup.position);
-
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        };
-
-        function render3DVisuals(data) {
-            while (meshGroup.children.length > 0) {
-                meshGroup.remove(meshGroup.children[0]);
-            }
-
-            if (data.length === 0) return;
-
-            const barWidth = 1.5;
-            const barSpacing = 2.5;
-            const startX = -(data.length * barSpacing) / 2 + barSpacing / 2;
-
-            data.forEach((item, index) => {
-                const totalHours = parseFloat(item.total_jam_kerja);
-                const barHeight = totalHours * SCALE_FACTOR;
-
-                // Warna 3D disesuaikan dengan Status KPI
-                const color = item.status === 'Target Tercapai' ? 0x00ffff : 0xffa500;
-
-                const geometry = new THREE.BoxGeometry(barWidth, barHeight, barWidth);
-                const material = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.8 });
-                const bar = new THREE.Mesh(geometry, material);
-
-                bar.position.x = startX + index * barSpacing;
-                bar.position.y = barHeight / 2 - 5;
-                bar.position.z = 0;
-
-                const wireframe = new THREE.WireframeGeometry(geometry);
-                const line = new THREE.LineSegments(wireframe);
-                line.material.color.setHex(color);
-                line.material.linewidth = 2;
-                line.position.copy(bar.position);
-
-                meshGroup.add(bar);
-                meshGroup.add(line);
-            });
-        }
-
-        initThreeJS();
-    </script>
+    <script src="rekap_gaji.js"></script>
 </body>
 
 </html>

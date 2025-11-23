@@ -15,14 +15,21 @@ const regNama = document.getElementById('regNama');
 const thresholdStatus = document.getElementById('thresholdStatus');
 const thresholdFill = document.getElementById('thresholdFill');
 const alignX = document.getElementById('alignX');
-const alignY = document.getElementById('alignY');
 const fptsStatus = document.getElementById('fptsStatus');
 
+// Overlay Elements
+// Catatan: Elemen-elemen ini harus ada di admin.html
+const overlay = document.getElementById('regSuccessOverlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayMessage = document.getElementById('overlayMessage');
+const overlayRegId = document.getElementById('overlayRegId');
+
+
 // --- 2. KONFIGURASI DAN VARIABEL GLOBAL ---
-const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models';
-// Opsi Deteksi Wajah (menggunakan TinyFaceDetector)
+// Catatan: Ganti 'https://cdn...' menjadi './models' jika Anda mendownload model ke folder lokal
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models'; 
 const detectionOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
-let detectionInterval; // Variabel untuk menyimpan loop deteksi
+let detectionInterval; 
 let isDetecting = false; // Flag untuk mencegah multiple detection saat capture
 
 // Utility function to add messages to the log stream
@@ -30,7 +37,9 @@ function addToLogStream(message, color = 'text-indigo-500') {
     const logStream = document.getElementById('logStream');
     if (!logStream) return;
     const p = document.createElement('p');
-    p.className = `text-xs ${color}`;
+    // Asumsi CSS variables seperti --status-green dan --warning-red didefinisikan di HTML/CSS
+    const resolvedColor = color.includes('--') ? color : color; 
+    p.className = `text-xs ${resolvedColor}`;
     p.textContent = message;
     if (logStream.children.length > 15) {
         logStream.removeChild(logStream.children[0]);
@@ -42,15 +51,11 @@ function addToLogStream(message, color = 'text-indigo-500') {
 
 // --- 3. FUNGSI UTAMA INIALISASI ---
 
-/**
- * Memuat model AI dan memulai stream kamera.
- */
 async function initializeApp() {
     statusMessage.textContent = 'Memuat model Face-api.js...';
     spindleLoading.classList.add('active');
     
     try {
-        // 3.1. Memuat Model dari CDN
         await Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
             faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -60,17 +65,14 @@ async function initializeApp() {
         addToLogStream("Log: Model AI berhasil dimuat. Siap.", 'var(--status-green)');
         statusMessage.textContent = 'Model dimuat. Mengakses kamera...';
 
-        // 3.2. Mengakses Kamera
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
         
         video.addEventListener('loadedmetadata', () => {
-            // Atur ukuran canvas agar sesuai dengan resolusi video saat dimuat
             const displaySize = { width: video.videoWidth, height: video.videoHeight };
             faceapi.matchDimensions(canvas, displaySize);
             
-            // 3.3. Mulai loop deteksi real-time
-            detectionInterval = setInterval(updateDetection, 100); // Setiap 100ms (10 FPS)
+            detectionInterval = setInterval(updateDetection, 100); 
             
             spindleLoading.classList.remove('active');
             statusMessage.textContent = 'SYSTEM READY. Silakan isi data dan tunjukkan wajah.';
@@ -87,9 +89,6 @@ async function initializeApp() {
 
 // --- 4. CONTINUOUS DETECTION LOOP ---
 
-/**
- * Fungsi yang berjalan berulang untuk mendeteksi wajah dan menggambar overlay.
- */
 async function updateDetection() {
     if (!video.srcObject) return;
     
@@ -100,31 +99,27 @@ async function updateDetection() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     if (detection) {
-        // Resize hasil deteksi agar sesuai dengan ukuran tampilan (CSS) video
         const displaySize = { width: video.clientWidth, height: video.clientHeight };
-        faceapi.matchDimensions(canvas, displaySize); // Pastikan canvas sesuai ukuran
+        faceapi.matchDimensions(canvas, displaySize); 
         
         const resizedDetections = faceapi.resizeResults(detection, displaySize);
 
-        // Gambar kotak deteksi dan landmark
         faceapi.draw.drawDetections(canvas, resizedDetections);
         faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
         
-        // Update Status Panel (F-PTS, Threshold)
         const box = resizedDetections.detection.box;
         const confidence = resizedDetections.detection.score;
         const center = box.x + box.width / 2;
         
         const alignPercentage = ((center / displaySize.width) * 100).toFixed(0);
         
-        // Logika sederhana untuk Threshold dan Alignment
-        const isAligned = Math.abs(center - displaySize.width / 2) < 50; // Jarak dari tengah
+        const isAligned = Math.abs(center - displaySize.width / 2) < 50; 
         const isHighConfidence = confidence > 0.85;
 
         thresholdStatus.textContent = `${(confidence * 100).toFixed(0)}%`;
         thresholdFill.style.width = `${(confidence * 100)}%`;
         
-        alignX.textContent = `${alignPercentage}%`; // Menggunakan persentase horizontal
+        alignX.textContent = `${alignPercentage}%`; 
 
         if (isAligned && isHighConfidence) {
             fptsStatus.textContent = '[TARGET_LOCKED]';
@@ -139,7 +134,6 @@ async function updateDetection() {
         }
 
     } else {
-        // Jika tidak ada wajah terdeteksi
         fptsStatus.textContent = '[NO_TARGET]';
         fptsStatus.style.color = 'var(--warning-red)';
         thresholdStatus.textContent = '0%';
@@ -152,10 +146,8 @@ async function updateDetection() {
 
 // --- 5. FUNGSI SUBMIT PENDAFTARAN ---
 
-// Enable button when both fields are filled AND a face is detected (Logic handled in updateDetection)
 [regIdKaryawan, regNama].forEach(input => {
     input.addEventListener('input', () => {
-        // Hanya cek apakah field terisi. Status enable/disable diatur oleh updateDetection
         if (!regIdKaryawan.value.trim() || !regNama.value.trim()) {
              submitRegisterBtn.disabled = true;
         }
@@ -163,9 +155,9 @@ async function updateDetection() {
 });
 
 submitRegisterBtn.addEventListener('click', async () => {
-    // Nonaktifkan loop deteksi saat proses capture descriptor
+    // Nonaktifkan loop deteksi sementara
     clearInterval(detectionInterval); 
-    isDetecting = true; // Set flag
+    isDetecting = true; 
     submitRegisterBtn.disabled = true;
     
     const nama = regNama.value.trim();
@@ -175,19 +167,18 @@ submitRegisterBtn.addEventListener('click', async () => {
     addToLogStream(`Log: PROSES Pendaftaran ${idKaryawan} dimulai.`, 'text-yellow-500');
     
     try {
-        // Deteksi wajah + Landmark + EKSTRAK Descriptor
         const detectionWithDescriptor = await faceapi.detectSingleFace(video, detectionOptions)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-            
-        // Bersihkan canvas agar tidak ada overlay saat alert muncul
+             .withFaceLandmarks()
+             .withFaceDescriptor();
+             
+        // Bersihkan canvas dari overlay deteksi
         canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
 
 
         if (!detectionWithDescriptor || !detectionWithDescriptor.descriptor) {
             statusMessage.textContent = '❌ Gagal membuat descriptor. Wajah hilang atau kualitas buruk.';
             addToLogStream('Log: GAGAL mendapatkan descriptor.', 'var(--warning-red)');
-            return; // Lanjut ke bagian finally untuk reset
+            return; 
         }
         
         statusMessage.textContent = '✅ Descriptor Wajah berhasil di-ekstrak. Mengirim ke Server...';
@@ -195,26 +186,49 @@ submitRegisterBtn.addEventListener('click', async () => {
 
         // Kirim data ke Node.js Express API
         const response = await fetch('/api/register_face', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id_karyawan: idKaryawan,
-                nama: nama,
-                // Pastikan descriptor dikonversi ke array JS biasa
-                descriptor: Array.from(detectionWithDescriptor.descriptor) 
-            })
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+                 id_karyawan: idKaryawan,
+                 nama: nama,
+                 descriptor: Array.from(detectionWithDescriptor.descriptor) 
+             })
         });
         
         const result = await response.json();
 
+        // --- LOGIKA ALERT OVERLAY BESAR ---
+        
+        // Atur ID Karyawan yang tampil di overlay
+        overlayRegId.textContent = idKaryawan; 
+        
         if (result.success) {
-            alert(result.message);
             addToLogStream(`Log: ${result.message}`, 'var(--status-green)');
             statusMessage.textContent = '✅ Pendaftaran Selesai. Masukkan data karyawan berikutnya.';
+
+            // Tampilkan Overlay Sukses (HIJAU)
+            overlay.style.setProperty('--overlay-color', 'var(--status-green)');
+            overlayTitle.textContent = ':: TRANSMISSION COMPLETE ::';
+            overlayMessage.textContent = 'DATA BIOMETRIK BERHASIL DIARSIPKAN';
+            
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }, 4000); 
+
         } else {
-            alert(`Pendaftaran GAGAL: ${result.message}`);
             addToLogStream(`Log: Server Error: ${result.message}`, 'var(--warning-red)');
             statusMessage.textContent = '❌ Error Server. Cek Log Stream.';
+            
+            // Tampilkan Overlay Gagal (MERAH)
+            overlay.style.setProperty('--overlay-color', 'var(--warning-red)');
+            overlayTitle.textContent = ':: REGISTRATION FAILED ::';
+            overlayMessage.textContent = result.message;
+
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }, 5000);
         }
         
     } catch (error) {
@@ -229,7 +243,7 @@ submitRegisterBtn.addEventListener('click', async () => {
         // Re-enable detection loop dan reset flag
         isDetecting = false;
         detectionInterval = setInterval(updateDetection, 100);
-        submitRegisterBtn.disabled = false;
+        // Submit button akan di-enable lagi oleh updateDetection jika wajah terkunci
     }
 });
 
